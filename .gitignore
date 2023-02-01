@@ -1,0 +1,6 @@
+# created by virtualenv automatically
+.idea
+Lib/
+Scripts/
+MTP_038_backend/__pycache__/
+pyvenv.cfg
