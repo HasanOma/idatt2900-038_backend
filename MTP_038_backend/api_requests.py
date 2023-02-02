@@ -35,13 +35,14 @@ async def schedule_all_ships(method, headers, interval, payload, url):
             api_response = await resp.json()
             print(api_response)
             #send through websocket here
+            """
             await self.channel_layer.group_send(
                 "ship_location",
                 {
                     "type": "send_ship_location",
                     "message": api_response,
                 })
-            """
+            
             for data in response:
                 latitude = data['latitude']
                 longitude = data['longitude']
