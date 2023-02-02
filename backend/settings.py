@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'MTP_038_backend.apps.Mtp038BackendConfig',
+    'channels'
 ]
 
 MIDDLEWARE = [
