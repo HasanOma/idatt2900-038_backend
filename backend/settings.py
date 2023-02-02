@@ -31,14 +31,15 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'MTP_038_backend.apps.Mtp038BackendConfig',
-    'channels'
+    'MTP_038_backend.apps.Mtp038BackendConfig'
 ]
 
 MIDDLEWARE = [
@@ -70,8 +71,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
-
+# WSGI_APPLICATION = 'backend.wsgi.application'
+ASGI_APPLICATION = "backend.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases

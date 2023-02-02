@@ -8,7 +8,7 @@ class ShipLocationConsumer(AsyncWebsocketConsumer):
     async def send_ship_location(self, event):
         message = event['message']
         await self.send(text_data=json.dumps({
-            'message': message
+            'message': 'heipaadei'
         }))
 
     async def disconnect(self, close_code):
