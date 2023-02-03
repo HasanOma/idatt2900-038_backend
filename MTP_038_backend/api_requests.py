@@ -10,7 +10,6 @@ top_left = [63.6, 9.56]
 bottom_right = [63.98, 12.01]
 bottom_left = [63.16, 10.03]
 
-
 def check_coordinates(latitude, longitude, top_right, top_left, bottom_right, bottom_left):
     if (latitude <= top_right[0] and latitude >= bottom_left[0] and
         longitude <= top_right[1] and longitude >= bottom_left[1]):
@@ -35,14 +34,14 @@ async def schedule_all_ships(method, headers, interval, payload, url):
             api_response = await resp.json()
             print(api_response)
             #send through websocket here
-            """
-            await self.channel_layer.group_send(
+
+            return await self.channel_layer.group_send(
                 "ship_location",
                 {
                     "type": "send_ship_location",
-                    "message": api_response,
+                    "message": "api_response",
                 })
-            
+            """
             for data in response:
                 latitude = data['latitude']
                 longitude = data['longitude']
@@ -63,15 +62,17 @@ async def token():
         await schedule_token(method_post, headers, 3500, payload, url)
 
 async def all_ships():
+    print("here4")
     global bearer
     url = "https://live.ais.barentswatch.no/v1/latest/combined"
     method_post = "GET"
     payload = "{}"
     headers = {'Authorization': f'Bearer {bearer}'}
     while True:
-        await schedule_all_ships(method_post, headers, 2, payload, url)
+        return await schedule_all_ships(method_post, headers, 2, payload, url)
 
 async def main():
+    print("here3")
     global bearer
     url = "https://id.barentswatch.no/connect/token"
     payload = "client_id=hasanro%40stud.ntnu.no%3AMarine%20Traffic%20Portal&scope=ais&client_secret=heihei999!!!&grant_type=client_credentials"
@@ -79,11 +80,14 @@ async def main():
     async with aiohttp.ClientSession() as session:
         async with session.request("POST", url, data=payload, headers=headers) as resp:
             api_response = await resp.json()
-            bearer = api_response['access_token']
+            rebearer = api_response['access_token']
+            print(bearer)
+            return bearer
 
-    print(bearer)
-    task1 = asyncio.create_task(token())
-    task2 = asyncio.create_task(all_ships())
-    await asyncio.gather(task1, task2)
+    # print(bearer)
+    # task1 = asyncio.create_task(token())
+    # task2 = asyncio.create_task(all_ships())
+    # await asyncio.gather(task1, task2)
 
-asyncio.run(main())
+async def run():
+    asyncio.run(main())
