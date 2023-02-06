@@ -1,7 +1,9 @@
+# from __future__ import absolute_import, unicode_literals
 import asyncio
 import aiohttp
 import requests
 import asgiref
+# from celery import shared_task
 
 bearer = None
 
@@ -34,14 +36,14 @@ async def schedule_all_ships(method, headers, interval, payload, url):
             api_response = await resp.json()
             print(api_response)
             #send through websocket here
-
+            """
             return await self.channel_layer.group_send(
                 "ship_location",
                 {
                     "type": "send_ship_location",
                     "message": "api_response",
                 })
-            """
+            
             for data in response:
                 latitude = data['latitude']
                 longitude = data['longitude']
@@ -71,23 +73,28 @@ async def all_ships():
     while True:
         return await schedule_all_ships(method_post, headers, 2, payload, url)
 
+# @shared_task
 async def main():
     print("here3")
     global bearer
     url = "https://id.barentswatch.no/connect/token"
+
     payload = "client_id=hasanro%40stud.ntnu.no%3AMarine%20Traffic%20Portal&scope=ais&client_secret=heihei999!!!&grant_type=client_credentials"
-    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    response = requests.request("POST", url, data=payload, headers=headers)
+
+    print(response.text)
     async with aiohttp.ClientSession() as session:
         async with session.request("POST", url, data=payload, headers=headers) as resp:
             api_response = await resp.json()
-            rebearer = api_response['access_token']
+            bearer = api_response['access_token']
             print(bearer)
             return bearer
 
-    # print(bearer)
+    print(bearer)
     # task1 = asyncio.create_task(token())
     # task2 = asyncio.create_task(all_ships())
-    # await asyncio.gather(task1, task2)
+    await asyncio.gather(task1, task2)
 
-async def run():
+if __name__ == '__main__':
     asyncio.run(main())

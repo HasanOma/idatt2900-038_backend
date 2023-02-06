@@ -33,6 +33,8 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'daphne',
     'channels',
+    'celery',
+    'redis',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -72,8 +74,9 @@ TEMPLATES = [
 ]
 
 # WSGI_APPLICATION = 'backend.wsgi.application'
-ASGI_APPLICATION = "backend.asgi.application"
+ASGI_APPLICATION = 'backend.asgi.application'
 
+CELERY_BROKER_URL = 'redis://localhost:6379'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 

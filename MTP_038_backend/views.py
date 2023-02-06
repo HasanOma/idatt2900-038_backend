@@ -1,3 +1,3 @@
-from django.shortcuts import render
+from .tasks import background_task
 
-# Create your views here.
+background_task.apply_async()
