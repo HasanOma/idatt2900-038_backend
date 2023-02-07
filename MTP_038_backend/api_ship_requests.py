@@ -3,9 +3,11 @@ import asyncio
 import aiohttp
 import requests
 import asgiref
+from MTP_038_backend import models
 # from celery import shared_task
 
 bearer = None
+list_of_ships = []
 
 top_right = [64.08, 11.47]
 top_left = [63.6, 9.56]
@@ -30,29 +32,28 @@ async def schedule_token(method, headers, interval, payload, url):
 
 async def schedule_all_ships(method, headers, interval, payload, url):
     global bearer
+    global list_of_ships
+    list_of_ships = []
     await asyncio.sleep(interval)
     async with aiohttp.ClientSession() as session:
         async with session.request(method, url, data=payload, headers=headers) as resp:
             api_response = await resp.json()
             print(api_response)
             #send through websocket here
-            """
-            return await self.channel_layer.group_send(
-                "ship_location",
-                {
-                    "type": "send_ship_location",
-                    "message": "api_response",
-                })
-            
-            for data in response:
+            for data in api_response:
                 latitude = data['latitude']
                 longitude = data['longitude']
                 if check_coordinates(latitude, longitude, top_right, top_left, bottom_right, bottom_left):
                     print(f"({latitude}, {longitude}) I trondheimsfjorden!")
+                    ship = models.Ship(data)
+                    list_of_ships.append(vars(ship))
                 else:
                     print(f"({latitude}, {longitude}) utenfor fjorden!")
+    # for ship in list_of_ships:
+    #     print(vars(ship))
+    return list_of_ships
             # Do something with the API response
-            """
+
 
 async def token():
     global bearer
@@ -89,12 +90,18 @@ async def main():
             api_response = await resp.json()
             bearer = api_response['access_token']
             print(bearer)
-            return bearer
+            # return bearer
 
     print(bearer)
     # task1 = asyncio.create_task(token())
     # task2 = asyncio.create_task(all_ships())
-    await asyncio.gather(task1, task2)
+    # await asyncio.gather(task1, task2)
+
+#todo filter ships in coordinates
+#todo make models for the ship data we want to send to frontend
+#todo get weather api
+#todo photo api
+#todo historic data for those ships
 
 if __name__ == '__main__':
     asyncio.run(main())

@@ -1,14 +1,14 @@
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
-from MTP_038_backend import tasks
+from MTP_038_backend import api_ship_requests
 
 class ShipLocationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
-        await tasks.main()
+        await api_ship_requests.main()
         while True:
-            message = await tasks.all_ships()
+            message = await api_ship_requests.all_ships()
             await self.send(text_data=json.dumps({
                 'message': message
             }))
