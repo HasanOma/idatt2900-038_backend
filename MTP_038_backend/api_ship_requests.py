@@ -97,11 +97,70 @@ async def main():
     # task2 = asyncio.create_task(all_ships())
     # await asyncio.gather(task1, task2)
 
+
+async def filter_ships():
+    global bearer
+
+    url = "https://live.ais.barentswatch.no/v1/combined"
+
+    payload = {
+        "downsample": False,
+        "modelType": "Full",
+        "modelFormat": "Geojson",
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [
+                        9.704635339617539,
+                        63.71636867949894
+                    ],
+                    [
+                        9.713635278804048,
+                        63.27997175643682
+                    ],
+                    [
+                        11.420623744565347,
+                        63.29076081515623
+                    ],
+                    [
+                        11.897620521465939,
+                        63.945256790972905
+                    ],
+                    [
+                        11.453623521583495,
+                        64.12388902116183
+                    ],
+                    [
+                        10.097632684107396,
+                        63.852867195619694
+                    ],
+                    [
+                        9.704635339617539,
+                        63.71636867949894
+                    ]
+
+                ]
+            ]
+        }
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {bearer}"}
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=payload, headers=headers) as response:
+            async for chunk in response.content.iter_chunked(1024):
+                # Do something with the chunk, like printing it
+                print(chunk.decode("utf-8"))
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
+
 #todo filter ships in coordinates
 #todo make models for the ship data we want to send to frontend
 #todo get weather api
 #todo photo api
 #todo historic data for those ships
-
-if __name__ == '__main__':
-    asyncio.run(main())
