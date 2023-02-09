@@ -30,7 +30,7 @@ class Weather_data(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({
                 'weather': msg
             }))
-            await asyncio.sleep(15)
+            await asyncio.sleep(900)
     async def disconnect(self, code):
         pass
 
