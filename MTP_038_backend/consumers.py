@@ -2,6 +2,7 @@ import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from MTP_038_backend import api_ship_requests
+from MTP_038_backend import api_weather
 
 class ShipLocationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -17,6 +18,20 @@ class ShipLocationConsumer(AsyncWebsocketConsumer):
             await asyncio.sleep(5)
 
     async def disconnect(self, close_code):
+        pass
+
+
+class Weather_data(AsyncWebsocketConsumer):
+    async def connect(self):
+        await self.accept()
+        while True:
+            msg = await api_weather.weather_api()
+            print(msg, " 2")
+            await self.send(text_data=json.dumps({
+                'weather': msg
+            }))
+            await asyncio.sleep(15)
+    async def disconnect(self, code):
         pass
 
 # class ShipLocationConsumer(AsyncWebsocketConsumer):
