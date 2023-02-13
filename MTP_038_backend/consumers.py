@@ -9,13 +9,14 @@ class ShipLocationConsumer(AsyncWebsocketConsumer):
         await self.accept()
         await api_ship_requests.main()
         while True:
-            message = await api_ship_requests.all_ships()
+            message = await api_ship_requests.filter_ships()
+            print(message)
             await self.send(text_data=json.dumps({
                 'message': message
             }))
 
             # Add a delay to avoid sending messages too frequently
-            await asyncio.sleep(5)
+
 
     async def disconnect(self, close_code):
         pass

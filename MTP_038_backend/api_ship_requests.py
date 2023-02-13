@@ -3,6 +3,7 @@ import asyncio
 import aiohttp
 import requests
 import asgiref
+import json
 from MTP_038_backend import models
 # from celery import shared_task
 
@@ -27,7 +28,7 @@ async def schedule_token(method, headers, interval, payload, url):
     async with aiohttp.ClientSession() as session:
         async with session.request(method, url, data=payload, headers=headers) as resp:
             api_response = await resp.json()
-            print(api_response)
+            # print(api_response)
             bearer = api_response['access_token']
 
 async def schedule_all_ships(method, headers, interval, payload, url):
@@ -38,17 +39,17 @@ async def schedule_all_ships(method, headers, interval, payload, url):
     async with aiohttp.ClientSession() as session:
         async with session.request(method, url, data=payload, headers=headers) as resp:
             api_response = await resp.json()
-            print(api_response)
+            # print(api_response)
             #send through websocket here
             for data in api_response:
                 latitude = data['latitude']
                 longitude = data['longitude']
                 if check_coordinates(latitude, longitude, top_right, top_left, bottom_right, bottom_left):
-                    print(f"({latitude}, {longitude}) I trondheimsfjorden!")
+                    # print(f"({latitude}, {longitude}) I trondheimsfjorden!")
                     ship = models.Ship(data)
                     list_of_ships.append(vars(ship))
-                else:
-                    print(f"({latitude}, {longitude}) utenfor fjorden!")
+                # else:
+                #     print(f"({latitude}, {longitude}) utenfor fjorden!")
     # for ship in list_of_ships:
     #     print(vars(ship))
     return list_of_ships
@@ -65,7 +66,7 @@ async def token():
         await schedule_token(method_post, headers, 3500, payload, url)
 
 async def all_ships():
-    print("here4")
+    # print("here4")
     global bearer
     url = "https://live.ais.barentswatch.no/v1/latest/combined"
     method_post = "GET"
@@ -76,7 +77,7 @@ async def all_ships():
 
 # @shared_task
 async def main():
-    print("here3")
+    # print("here3")
     global bearer
     url = "https://id.barentswatch.no/connect/token"
 
@@ -84,18 +85,14 @@ async def main():
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
     response = requests.request("POST", url, data=payload, headers=headers)
 
-    print(response.text)
+    # print(response.text)
     async with aiohttp.ClientSession() as session:
         async with session.request("POST", url, data=payload, headers=headers) as resp:
             api_response = await resp.json()
             bearer = api_response['access_token']
-            print(bearer)
-            # return bearer
+            # print(bearer)
 
-    print(bearer)
-    # task1 = asyncio.create_task(token())
-    # task2 = asyncio.create_task(all_ships())
-    # await asyncio.gather(task1, task2)
+    # print(bearer)
 
 
 async def filter_ships():
@@ -147,20 +144,25 @@ async def filter_ships():
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": "Bearer {bearer}"}
+        "Authorization": "Bearer " + bearer
+    }
 
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=payload, headers=headers) as response:
-            async for chunk in response.content.iter_chunked(1024):
-                # Do something with the chunk, like printing it
-                print(chunk.decode("utf-8"))
-
+            content_length = int(response.headers.get("Content-Length", 0))
+            chunk_size = max(content_length // 100, 4096)  # at least 2048 bytes
+            async for chunk in response.content.iter_chunked(chunk_size):
+                json_objects = chunk.decode("utf-8").split("\n")
+                for obj in json_objects:
+                    # print("OBJ      _____________          ",obj)
+                    data_return = json.loads(obj)
+                    data_ = models.Vessel(data_return)
+                    # print(vars(data_))
+                    return vars(data_)
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    asyncio.run(filter_ships())
 
-#todo filter ships in coordinates
 #todo make models for the ship data we want to send to frontend
-#todo get weather api
 #todo photo api
 #todo historic data for those ships
