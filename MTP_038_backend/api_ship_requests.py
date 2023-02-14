@@ -73,7 +73,7 @@ async def all_ships():
     payload = "{}"
     headers = {'Authorization': f'Bearer {bearer}'}
     while True:
-        return await schedule_all_ships(method_post, headers, 2, payload, url)
+        return await schedule_all_ships(method_post, headers, 1, payload, url)
 
 # @shared_task
 async def main():
