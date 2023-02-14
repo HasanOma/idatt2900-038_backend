@@ -16,7 +16,11 @@ top_left = [63.6, 9.56]
 bottom_right = [63.98, 12.01]
 bottom_left = [63.16, 10.03]
 
-def check_coordinates(latitude, longitude, top_right, top_left, bottom_right, bottom_left):
+def check_coordinates(latitude, longitude):
+    top_right = [64.08, 11.47]
+    top_left = [63.6, 9.56]
+    bottom_right = [63.98, 12.01]
+    bottom_left = [63.16, 10.03]
     if (latitude <= top_right[0] and latitude >= bottom_left[0] and
         longitude <= top_right[1] and longitude >= bottom_left[1]):
         return True
@@ -32,31 +36,6 @@ async def schedule_token(method, headers, interval, payload, url):
             # print(api_response)
             bearer = api_response['access_token']
 
-async def schedule_all_ships(method, headers, interval, payload, url):
-    global bearer
-    global list_of_ships
-    list_of_ships = []
-    await asyncio.sleep(interval)
-    async with aiohttp.ClientSession() as session:
-        async with session.request(method, url, data=payload, headers=headers) as resp:
-            api_response = await resp.json()
-            # print(api_response)
-            #send through websocket here
-            for data in api_response:
-                latitude = data['latitude']
-                longitude = data['longitude']
-                if check_coordinates(latitude, longitude, top_right, top_left, bottom_right, bottom_left):
-                    # print(f"({latitude}, {longitude}) I trondheimsfjorden!")
-                    ship = models.Ship(data)
-                    list_of_ships.append(vars(ship))
-                # else:
-                #     print(f"({latitude}, {longitude}) utenfor fjorden!")
-    # for ship in list_of_ships:
-    #     print(vars(ship))
-    return list_of_ships
-            # Do something with the API response
-
-
 async def token():
     global bearer
     url = "https://id.barentswatch.no/connect/token"
@@ -66,15 +45,32 @@ async def token():
     while True:
         await schedule_token(method_post, headers, 3500, payload, url)
 
+async def schedule_all_ships(method, headers, interval, payload, url, session):
+    list_of_ships = []
+    await asyncio.sleep(interval)
+    try:
+        async with session.request(method, url, data=payload, headers=headers) as resp:
+            api_response = await resp.json()
+            for data in api_response:
+                latitude = data['latitude']
+                longitude = data['longitude']
+                if check_coordinates(latitude, longitude):
+                    ship = models.Ship(data)
+                    list_of_ships.append(vars(ship))
+    except Exception as e:
+        print(f"Error during API request: {e}")
+        return []
+    return list_of_ships
+
 async def all_ships():
-    # print("here4")
     global bearer
     url = "https://live.ais.barentswatch.no/v1/latest/combined"
-    method_post = "GET"
+    method = "GET"
     payload = "{}"
     headers = {'Authorization': f'Bearer {bearer}'}
-    while True:
-        return await schedule_all_ships(method_post, headers, 1, payload, url)
+    async with aiohttp.ClientSession() as session:
+        while True:
+            return await schedule_all_ships(method, headers, 1, payload, url, session)
 
 # @shared_task
 async def main():
@@ -148,18 +144,6 @@ async def filter_ships():
         "Authorization": "Bearer " + bearer
     }
 
-    # async with aiohttp.ClientSession() as session:
-    #     async with session.post(url, json=payload, headers=headers) as response:
-    #         content_length = int(response.headers.get("Content-Length", 0))
-    #         chunk_size = max(content_length // 100, 4096)  # at least 2048 bytes
-    #         async for chunk in response.content.iter_chunked(chunk_size):
-    #             json_objects = chunk.decode("utf-8").split("\n")
-    #             for obj in json_objects:
-    #                 # print("OBJ      _____________          ",obj)
-    #                 data_return = json.loads(obj)
-    #                 data_ = models.Vessel(data_return)
-    #                 # print(vars(data_))
-    #                 return vars(data_)
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload, headers=headers) as response:
