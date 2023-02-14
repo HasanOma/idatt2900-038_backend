@@ -10,7 +10,7 @@ class Filtered_Ships(AsyncWebsocketConsumer):
         await api_ship_requests.main()
         while True:
             message = await api_ship_requests.filter_ships()
-            print(message)
+            # print(message)
             await self.send(text_data=json.dumps({
                 'message': message
             }))
@@ -48,30 +48,3 @@ class Weather_data(AsyncWebsocketConsumer):
             await asyncio.sleep(900)
     async def disconnect(self, code):
         pass
-
-# class ShipLocationConsumer(AsyncWebsocketConsumer):
-#     async def connect(self):
-#         await self.accept()
-#
-#         # sleep(2)
-#         message = await tasks.main()
-#             # api_requests.all_ships_from_other_file()
-#
-#         # await
-#
-#         print(message)
-#
-#         message = await tasks.all_ships()
-#
-#         await self.send(text_data=json.dumps({
-#             'message': message
-#         }))
-#
-#     async def send_ship_location(self, event):
-#         message = event['message']
-#         await self.send(text_data=json.dumps({
-#             'messag': 'heipaadei'
-#         }))
-#
-#     async def disconnect(self, close_code):
-#         pass

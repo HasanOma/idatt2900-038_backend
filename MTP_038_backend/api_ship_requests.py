@@ -4,6 +4,7 @@ import aiohttp
 import requests
 import asgiref
 import json
+from typing import Dict
 from MTP_038_backend import models
 # from celery import shared_task
 
@@ -147,18 +148,38 @@ async def filter_ships():
         "Authorization": "Bearer " + bearer
     }
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, json=payload, headers=headers) as response:
-            content_length = int(response.headers.get("Content-Length", 0))
-            chunk_size = max(content_length // 100, 4096)  # at least 2048 bytes
-            async for chunk in response.content.iter_chunked(chunk_size):
-                json_objects = chunk.decode("utf-8").split("\n")
-                for obj in json_objects:
-                    # print("OBJ      _____________          ",obj)
-                    data_return = json.loads(obj)
-                    data_ = models.Vessel(data_return)
-                    # print(vars(data_))
-                    return vars(data_)
+    # async with aiohttp.ClientSession() as session:
+    #     async with session.post(url, json=payload, headers=headers) as response:
+    #         content_length = int(response.headers.get("Content-Length", 0))
+    #         chunk_size = max(content_length // 100, 4096)  # at least 2048 bytes
+    #         async for chunk in response.content.iter_chunked(chunk_size):
+    #             json_objects = chunk.decode("utf-8").split("\n")
+    #             for obj in json_objects:
+    #                 # print("OBJ      _____________          ",obj)
+    #                 data_return = json.loads(obj)
+    #                 data_ = models.Vessel(data_return)
+    #                 # print(vars(data_))
+    #                 return vars(data_)
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload, headers=headers) as response:
+                if response.status != 200:
+                    raise Exception(f"Unexpected response status: {response.status}")
+
+                content_length = int(response.headers.get("Content-Length", 0))
+                chunk_size = max(content_length // 100, 4096)  # at least 2048 bytes
+                async for chunk in response.content.iter_chunked(chunk_size):
+                    json_objects = chunk.decode("utf-8").split("\n")
+                    for obj in json_objects:
+                        try:
+                            data_return = json.loads(obj)
+                            data_ = models.Vessel(data_return)
+                            return vars(data_)
+                        except Exception as e:
+                            print(f"Error processing JSON object: {obj}. Error: {e}")
+    except Exception as e:
+        print(f"Error fetching data from {url}. Error: {e}")
+
 
 if __name__ == '__main__':
     asyncio.run(filter_ships())
