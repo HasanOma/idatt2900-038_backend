@@ -24,6 +24,7 @@ class Filtered_Ships(AsyncWebsocketConsumer):
 class Ship_locations(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
+        await api_ship_requests.main()
         while True:
             message = await api_ship_requests.all_ships()
             print(message)
