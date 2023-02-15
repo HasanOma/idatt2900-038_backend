@@ -31,9 +31,9 @@ def set_coordinates(north, south, west, east):
 
 def check_coordinates_valid():
     if coordinates['north'] == 1 & coordinates['south'] == 1 & coordinates['west'] == 1 & coordinates['east'] == 1:
-        return True
-    else:
         return False
+    else:
+        return True
 def check_specific_coordinates(longitude, latitude):
     global coordinates
     north = coordinates['north']
@@ -62,7 +62,7 @@ async def schedule_token(method, headers, interval, payload, url):
     async with aiohttp.ClientSession() as session:
         async with session.request(method, url, data=payload, headers=headers) as resp:
             api_response = await resp.json()
-            # print(api_response)
+            print(api_response)
             bearer = api_response['access_token']
 
 async def token():
@@ -72,9 +72,10 @@ async def token():
     payload = "client_id=hasanro%40stud.ntnu.no%3AMarine%20Traffic%20Portal&scope=ais&client_secret=heihei999!!!&grant_type=client_credentials"
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     while True:
-        await schedule_token(method_post, headers, 3500, payload, url)
+        await schedule_token(method_post, headers, 3200, payload, url)
 
 async def schedule_all_ships(method, headers, interval, payload, url, session):
+    global list_of_ships
     list_of_ships = []
     await asyncio.sleep(interval)
     try:
@@ -87,10 +88,9 @@ async def schedule_all_ships(method, headers, interval, payload, url, session):
                     if check_specific_coordinates(latitude, longitude):
                         ship = models.Ship(data)
                         list_of_ships.append(vars(ship))
-                else:
-                    if check_coordinates(latitude, longitude):
-                        ship = models.Ship(data)
-                        list_of_ships.append(vars(ship))
+                elif check_coordinates(latitude, longitude):
+                    ship = models.Ship(data)
+                    list_of_ships.append(vars(ship))
     except Exception as e:
         print(f"Error during API request: {e}")
         return []
@@ -104,7 +104,7 @@ async def all_ships():
     headers = {'Authorization': f'Bearer {bearer}'}
     async with aiohttp.ClientSession() as session:
         while True:
-            return await schedule_all_ships(method, headers, 1, payload, url, session)
+            return await schedule_all_ships(method, headers, 2, payload, url, session)
 
 # @shared_task
 async def main():
@@ -116,14 +116,12 @@ async def main():
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
     response = requests.request("POST", url, data=payload, headers=headers)
 
-    # print(response.text)
+    print(response.text)
     async with aiohttp.ClientSession() as session:
         async with session.request("POST", url, data=payload, headers=headers) as resp:
             api_response = await resp.json()
             bearer = api_response['access_token']
-            # print(bearer)
-
-    # print(bearer)
+    asyncio.create_task(token())
 
 
 async def filter_ships():

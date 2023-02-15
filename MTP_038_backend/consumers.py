@@ -27,7 +27,7 @@ class Ship_locations(AsyncWebsocketConsumer):
         await api_ship_requests.main()
         while True:
             message = await api_ship_requests.all_ships()
-            print(message)
+            # print(message)
             await self.send(text_data=json.dumps({
                 'message': message
             }))
@@ -39,6 +39,7 @@ class Ship_locations(AsyncWebsocketConsumer):
 class Weather_data(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
+        await api_ship_requests.main()
         while True:
             msg = await api_weather.weather_api()
             print(msg, " 2")
