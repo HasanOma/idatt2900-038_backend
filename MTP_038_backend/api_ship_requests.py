@@ -11,10 +11,10 @@ from MTP_038_backend import models
 bearer = None
 list_of_ships = []
 coordinates = {
-"east": 1,
-"west": 1,
-"north": 1,
-"south": 1
+"north": 1.0,
+"west": 1.0,
+"south": 1.0,
+"east": 1.0
 }
 
 top_right = [64.08, 11.47]
@@ -22,25 +22,29 @@ top_left = [63.6, 9.56]
 bottom_right = [63.98, 12.01]
 bottom_left = [63.16, 10.03]
 
-def set_coordinates(north, south, west, east):
+def set_coordinates(north, west, south, east):
     global coordinates
     coordinates['north'] = north
-    coordinates['south'] = south
     coordinates['west'] =  west
+    coordinates['south'] = south
     coordinates['east'] = east
+    print("new coordinates: ", coordinates.values() )
 
 def check_coordinates_valid():
-    if coordinates['north'] == 1 & coordinates['south'] == 1 & coordinates['west'] == 1 & coordinates['east'] == 1:
+    global coordinates
+    if coordinates['north'] == 1.0 and coordinates['south'] == 1.0 and coordinates['west'] == 1.0 and coordinates[
+        'east'] == 1.0:
         return False
     else:
         return True
-def check_specific_coordinates(longitude, latitude):
+def check_specific_coordinates(latitude, longitude):
     global coordinates
+    print("kommet til spesifikke")
     north = coordinates['north']
     south = coordinates['south']
     west = coordinates['west']
     east = coordinates['east']
-    if north >= latitude >= south and west <= longitude <= east:
+    if coordinates['north'] >= latitude >=coordinates['south'] and coordinates['west'] <= longitude <= coordinates['east']:
         return True
     else:
         return False
@@ -79,11 +83,14 @@ async def schedule_all_ships(method, headers, interval, payload, url, session):
     list_of_ships = []
     await asyncio.sleep(interval)
     try:
+        print("rett f;r request")
         async with session.request(method, url, data=payload, headers=headers) as resp:
             api_response = await resp.json()
+
             for data in api_response:
                 latitude = data['latitude']
                 longitude = data['longitude']
+
                 if check_coordinates_valid():
                     if check_specific_coordinates(latitude, longitude):
                         ship = models.Ship(data)

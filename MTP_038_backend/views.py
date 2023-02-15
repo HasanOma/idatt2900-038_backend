@@ -3,6 +3,7 @@ import numpy as np
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework import permissions
+from MTP_038_backend import api_ship_requests
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth.models import User, Group
@@ -46,6 +47,7 @@ class CoordinateView(APIView):
         serializer = CoordinateSerializer(data=data)
         print(data)
         if serializer.is_valid():
+            api_ship_requests.set_coordinates(data['north'], data['west'], data['south'], data['east'])
             return Response(data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
