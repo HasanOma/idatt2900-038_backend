@@ -49,3 +49,9 @@ class Weather:
     def __init__(self,weather_data):
         self.temperature = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["air_temperature"]
         self.wind_speed = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["wind_speed"]
+
+class Coordinate(models.Model):
+    north: models.DecimalField(max_digits=14)
+    west: models.DecimalField(max_digits=14)
+    south: models.DecimalField(max_digits=14)
+    east: models.DecimalField(max_digits=14)
