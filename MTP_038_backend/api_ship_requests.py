@@ -9,7 +9,6 @@ from MTP_038_backend import models
 # from celery import shared_task
 
 bearer = None
-list_of_ships = []
 coordinates = {
 "north": 1.0,
 "west": 1.0,
@@ -22,7 +21,7 @@ top_left = [63.6, 9.56]
 bottom_right = [63.98, 12.01]
 bottom_left = [63.16, 10.03]
 
-async def set_coordinates(north, west, south, east):
+def set_coordinates(north, west, south, east):
     global coordinates
     coordinates['north'] = north
     coordinates['west'] =  west
@@ -30,14 +29,11 @@ async def set_coordinates(north, west, south, east):
     coordinates['east'] = east
     print("new coordinates: ", coordinates.values() )
 
-async def check_coordinates_valid():
+def check_coordinates_valid():
     global coordinates
-    if coordinates['north'] == 1.0 and coordinates['south'] == 1.0 and coordinates['west'] == 1.0 and coordinates[
-        'east'] == 1.0:
-        return False
-    else:
-        return True
-async def check_specific_coordinates(latitude, longitude):
+    return coordinates != { "north": 1.0, "west": 1.0, "south": 1.0, "east": 1.0 }
+
+def check_specific_coordinates(latitude, longitude):
     global coordinates
     north = coordinates['north']
     south = coordinates['south']
@@ -48,7 +44,7 @@ async def check_specific_coordinates(latitude, longitude):
     else:
         return False
 
-async def check_coordinates(latitude, longitude):
+def check_coordinates(latitude, longitude):
     top_right = [64.08, 11.47]
     top_left = [63.6, 9.56]
     bottom_right = [63.98, 12.01]
@@ -77,9 +73,7 @@ async def token():
     while True:
         await schedule_token(method_post, headers, 3200, payload, url)
 
-async def schedule_all_ships(method, headers, interval, payload, url, session):
-    global list_of_ships
-    list_of_ships = []
+async def schedule_all_ships(method, headers, interval, payload, url, session, list_of_ships):
     await asyncio.sleep(interval)
     try:
         async with session.request(method, url, data=payload, headers=headers) as resp:
@@ -97,6 +91,7 @@ async def schedule_all_ships(method, headers, interval, payload, url, session):
     except Exception as e:
         print(f"Error during API request: {e}")
         return []
+    print(f"Number of ships: {len(list_of_ships)}")
     return list_of_ships
 
 async def all_ships():
@@ -107,7 +102,8 @@ async def all_ships():
     headers = {'Authorization': f'Bearer {bearer}'}
     async with aiohttp.ClientSession() as session:
         while True:
-            return await schedule_all_ships(method, headers, 2, payload, url, session)
+            list_of_ships = []
+            return await schedule_all_ships(method, headers, 0, payload, url, session, list_of_ships)
 
 # @shared_task
 async def main():
