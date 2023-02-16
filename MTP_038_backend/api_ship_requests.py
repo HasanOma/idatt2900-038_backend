@@ -16,6 +16,18 @@ coordinates = {
 "east": 1.0
 }
 
+filter_coordinates = [
+    [
+        [9.704635339617539, 63.71636867949894],
+        [9.713635278804048, 63.27997175643682],
+        [11.420623744565347, 63.29076081515623],
+        [11.897620521465939, 63.945256790972905],
+        [11.453623521583495, 64.12388902116183],
+        [10.097632684107396, 63.852867195619694],
+        [9.704635339617539, 63.71636867949894]
+    ]
+]
+
 top_right = [64.08, 11.47]
 top_left = [63.6, 9.56]
 bottom_right = [63.98, 12.01]
@@ -23,11 +35,22 @@ bottom_left = [63.16, 10.03]
 
 def set_coordinates(north, west, south, east):
     global coordinates
+    global filter_coordinates
     coordinates['north'] = north
     coordinates['west'] =  west
     coordinates['south'] = south
     coordinates['east'] = east
+    filter_coordinates = [
+        [
+            [west, north],
+            [west, south],
+            [east, south],
+            [east, north],
+            [west, north],
+        ]
+    ]
     print("new coordinates: ", coordinates.values() )
+    print("new filter_coordinates   ", filter_coordinates)
 
 def check_coordinates_valid():
     global coordinates
@@ -126,7 +149,11 @@ async def main():
 async def filter_ships():
     global bearer
 
+    global filter_coordinates
+
     url = "https://live.ais.barentswatch.no/v1/combined"
+
+
 
     payload = {
         "downsample": False,
@@ -134,39 +161,7 @@ async def filter_ships():
         "modelFormat": "Geojson",
         "geometry": {
             "type": "Polygon",
-            "coordinates": [
-                [
-                    [
-                        9.704635339617539,
-                        63.71636867949894
-                    ],
-                    [
-                        9.713635278804048,
-                        63.27997175643682
-                    ],
-                    [
-                        11.420623744565347,
-                        63.29076081515623
-                    ],
-                    [
-                        11.897620521465939,
-                        63.945256790972905
-                    ],
-                    [
-                        11.453623521583495,
-                        64.12388902116183
-                    ],
-                    [
-                        10.097632684107396,
-                        63.852867195619694
-                    ],
-                    [
-                        9.704635339617539,
-                        63.71636867949894
-                    ]
-
-                ]
-            ]
+            "coordinates": filter_coordinates
         }
     }
 
