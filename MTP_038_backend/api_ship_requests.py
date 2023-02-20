@@ -9,10 +9,12 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from MTP_038_backend import models
 from backend.database import session
+from backend.database import add
 from MTP_038_backend.models import Ship
 # from celery import shared_task
 
 bearer = None
+filtered_ships = []
 coordinates = {
 "north": 1.0,
 "west": 1.0,
@@ -101,6 +103,9 @@ async def token():
         await schedule_token(method_post, headers, 3200, payload, url)
 
 async def schedule_all_ships(method, headers, interval, payload, url, session, list_of_ships):
+    global filtered_ships
+    for filtered_ship in filtered_ships:
+        await add_ship(filtered_ship)
     await asyncio.sleep(interval)
     try:
         async with session.request(method, url, data=payload, headers=headers) as resp:
@@ -130,7 +135,7 @@ async def all_ships():
     async with aiohttp.ClientSession() as session:
         while True:
             list_of_ships = []
-            return await schedule_all_ships(method, headers, 0, payload, url, session, list_of_ships)
+            return await schedule_all_ships(method, headers, 2, payload, url, session, list_of_ships)
 
 # @shared_task
 async def main():
@@ -153,7 +158,7 @@ async def main():
 
 async def filter_ships():
     global bearer
-
+    global filtered_ships
     global filter_coordinates
 
     url = "https://live.ais.barentswatch.no/v1/combined"
@@ -180,41 +185,26 @@ async def filter_ships():
                     raise Exception(f"Unexpected response status: {response.status}")
                 content_length = int(response.headers.get("Content-Length", 0))
                 chunk_size = max(content_length // 100, 4096)  # at least 2048 bytes
-                async for chunk in response.content.iter_chunked(chunk_size):
+                response_content = response.content
+                while True:
+                    chunk = await response_content.read(chunk_size)
+                    if not chunk:
+                        break
                     json_objects = chunk.decode("utf-8").split("\n")
                     for obj in json_objects:
                         if not obj:
                             continue
                         try:
                             data_return = json.loads(obj)
-                            ship = models.Vessel(data_return)
+                            data_ = models.Vessel(data_return)
 
-                            data_ = Ship(mmsi=ship.mmsi,
-                                            name=ship.name,
-                                            msgtime=ship.msgtime,
-                                            latitude=ship.latitude,
-                                            longitude=ship.longitude,
-                                            speedOverGround=ship.speedOverGround,
-                                            courseOverGround=ship.courseOverGround,
-                                            navigationalStatus=ship.navigationalStatus,
-                                            rateOfTurn=ship.rateOfTurn,
-                                            shipType=ship.shipType,
-                                            trueHeading=ship.trueHeading,
-                                            callSign=ship.callSign,
-                                            destination=ship.destination,
-                                            eta=ship.eta,
-                                            imoNumber=ship.imoNumber,
-                                            dimensionA=ship.dimensionA,
-                                            dimensionB=ship.dimensionB,
-                                            dimensionC=ship.dimensionC,
-                                            dimensionD=ship.dimensionD,
-                                            draught=ship.draught,
-                                            shipLength=ship.shipLength,
-                                            shipWidth=ship.shipWidth,
-                                            positionFixingDeviceType=ship.positionFixingDeviceType,
-                                            reportClass=ship.reportClass)
-
-                            await add_ship(data_)
+                            add(ship)
+                            print(ship)
+                            if data_ not in filtered_ships:
+                                filtered_ships.append(data_)
+                                ship = Ship(**data_.__dict__)
+                            print(len(filtered_ships))
+                            print(data_.name)
                             return data_.__dict__
                         except Exception as e:
                             print(f"Error processing JSON object: {obj}. Error: {e}")
@@ -256,7 +246,8 @@ async def add_ship(ship):
                     positionFixingDeviceType=ship.positionFixingDeviceType,
                     reportClass=ship.reportClass)
 
-    return session.add(new_ship)
+    session.add(new_ship)
+    print("ship added")
     try:
         await sync_to_async(session.commit)()
         print("Ship added to database")

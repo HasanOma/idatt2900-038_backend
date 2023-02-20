@@ -50,6 +50,11 @@ class Vessel:
         self.positionFixingDeviceType = data['properties']['positionFixingDeviceType']
         self.reportClass = data['properties']['reportClass']
 
+    def __eq__(self, other):
+        if isinstance(other, Vessel):
+            return self.mmsi == other.mmsi
+        return False
+
 class Ship(Base):
     __tablename__ = 'ship'
 

@@ -15,3 +15,28 @@ from sqlalchemy.orm import sessionmaker
 engine = create_engine('sqlite:///db.sqlite3', echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
+
+def add(obj):
+    session.add(obj)
+    session.commit()
+
+# Read (Retrieve) operation:
+# ships = session.query(Ship).all()
+
+#Update operation:
+#ship = session.query(Ship).filter(Ship.mmsi == 123).first()
+# ship.name = "new name"
+# session.commit()
+
+#Delete operation:
+# ship = session.query(Ship).filter(Ship.mmsi == 123).first()
+# session.delete(ship)
+# session.commit()
+
+# List operation:
+# ships = session.query(Ship).all()
+# for ship in ships:
+#     print(ship.mmsi, ship.name)
+
+
+
