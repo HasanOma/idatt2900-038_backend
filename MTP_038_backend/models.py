@@ -1,6 +1,11 @@
 from django.db import models
-
+from sqlalchemy import Column, Integer, String, Float
+from backend.database import engine
+from sqlalchemy.ext.declarative import declarative_base
 # Create your models here.
+
+Base = declarative_base()
+
 class ship_request:
     def __init__(self, data):
         self.courseOverGround = data['courseOverGround']
@@ -45,37 +50,38 @@ class Vessel:
         self.positionFixingDeviceType = data['properties']['positionFixingDeviceType']
         self.reportClass = data['properties']['reportClass']
 
-class Ship(Model):
-    mmsi = fields.IntField(primary_key=True)
-    name = fields.CharField(max_length=255, null = True)
-    msgtime = fields.CharField(max_length=255, null=True)
-    latitude = fields.FloatField(null=True)
-    longitude = fields.FloatField(null=True)
-    speedOverGround = fields.FloatField(null=True)
-    courseOverGround = fields.FloatField(null=True)
-    navigationalStatus = fields.IntField(null=True)
-    rateOfTurn = fields.FloatField(null=True)
-    shipType = fields.IntField(null=True)
-    trueHeading = fields.IntField(null=True)
-    callSign = fields.CharField(max_length=255, null=True)
-    destination = fields.CharField(max_length=255, null=True)
-    eta = fields.CharField(max_length=255, null=True)
-    imoNumber = fields.IntField(null=True)  # Add this line
-    dimensionA = fields.IntField(null=True)
-    dimensionB = fields.IntField(null=True)
-    dimensionC = fields.IntField(null=True)
-    dimensionD = fields.IntField(null=True)
-    draught = fields.FloatField(null=True)
-    shipLength = fields.FloatField(null=True)
-    shipWidth = fields.FloatField(null=True)
-    positionFixingDeviceType = fields.IntField(null=True)
-    reportClass = fields.CharField(max_length=255, null=True)
+class Ship(Base):
+    __tablename__ = 'ship'
 
-    def save_to_database(self):
+    mmsi = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=True)
+    msgtime = Column(String(255), nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    speedOverGround = Column(Float, nullable=True)
+    courseOverGround = Column(Float, nullable=True)
+    navigationalStatus = Column(Integer, nullable=True)
+    rateOfTurn = Column(Float, nullable=True)
+    shipType = Column(Integer, nullable=True)
+    trueHeading = Column(Integer, nullable=True)
+    callSign = Column(String(255), nullable=True)
+    destination = Column(String(255), nullable=True)
+    eta = Column(String(255), nullable=True)
+    imoNumber = Column(Integer, nullable=True)
+    dimensionA = Column(Integer, nullable=True)
+    dimensionB = Column(Integer, nullable=True)
+    dimensionC = Column(Integer, nullable=True)
+    dimensionD = Column(Integer, nullable=True)
+    draught = Column(Float, nullable=True)
+    shipLength = Column(Float, nullable=True)
+    shipWidth = Column(Float, nullable=True)
+    positionFixingDeviceType = Column(Integer, nullable=True)
+    reportClass = Column(String(255), nullable=True)
+
+    def save_to_database(self, session):
         # Check if the object already exists in the database
-        try:
-            ship = Ship.objects.get(mmsi=self.mmsi)
-        except Ship.DoesNotExist:
+        ship = session.query(Ship).get(self.mmsi)
+        if not ship:
             # If the object does not exist, create a new one
             ship = Ship(mmsi=self.mmsi)
 
@@ -103,7 +109,10 @@ class Ship(Model):
         ship.reportClass = self.reportClass
 
         # Save the updated or new object to the database
-        ship.save()
+        session.add(ship)
+        session.commit()
+
+Base.metadata.create_all(engine)
 
 class Weather:
     def __init__(self,weather_data):

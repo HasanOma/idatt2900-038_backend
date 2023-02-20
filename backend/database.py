@@ -8,7 +8,10 @@
 #     # Create an asyncpg connection pool
 #     pool = await asyncpg.create_pool(DATABASE_URL)
 #     database._conn = pool
-import databases
 
-DATABASE_URL = "sqlite:///db.sqlite3"
-database = databases.Database(DATABASE_URL)
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+engine = create_engine('sqlite:///db.sqlite3', echo=True)
+Session = sessionmaker(bind=engine)
+session = Session()

@@ -5,8 +5,11 @@ import requests
 import asgiref
 import json
 from typing import Dict
-from backend.database import database
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from MTP_038_backend import models
+from backend.database import session
+from MTP_038_backend.models import Ship
 # from celery import shared_task
 
 bearer = None
@@ -132,6 +135,7 @@ async def all_ships():
 # @shared_task
 async def main():
     # print("here3")
+    # await connect_to_db()
     global bearer
     url = "https://id.barentswatch.no/connect/token"
 
@@ -154,8 +158,6 @@ async def filter_ships():
 
     url = "https://live.ais.barentswatch.no/v1/combined"
 
-
-
     payload = {
         "downsample": False,
         "modelType": "Full",
@@ -176,21 +178,91 @@ async def filter_ships():
             async with session.post(url, json=payload, headers=headers) as response:
                 if response.status != 200:
                     raise Exception(f"Unexpected response status: {response.status}")
-
                 content_length = int(response.headers.get("Content-Length", 0))
                 chunk_size = max(content_length // 100, 4096)  # at least 2048 bytes
                 async for chunk in response.content.iter_chunked(chunk_size):
                     json_objects = chunk.decode("utf-8").split("\n")
                     for obj in json_objects:
+                        if not obj:
+                            continue
                         try:
                             data_return = json.loads(obj)
-                            data_ = models.Vessel(data_return)
-                            return vars(data_)
+                            ship = models.Vessel(data_return)
+
+                            data_ = Ship(mmsi=ship.mmsi,
+                                            name=ship.name,
+                                            msgtime=ship.msgtime,
+                                            latitude=ship.latitude,
+                                            longitude=ship.longitude,
+                                            speedOverGround=ship.speedOverGround,
+                                            courseOverGround=ship.courseOverGround,
+                                            navigationalStatus=ship.navigationalStatus,
+                                            rateOfTurn=ship.rateOfTurn,
+                                            shipType=ship.shipType,
+                                            trueHeading=ship.trueHeading,
+                                            callSign=ship.callSign,
+                                            destination=ship.destination,
+                                            eta=ship.eta,
+                                            imoNumber=ship.imoNumber,
+                                            dimensionA=ship.dimensionA,
+                                            dimensionB=ship.dimensionB,
+                                            dimensionC=ship.dimensionC,
+                                            dimensionD=ship.dimensionD,
+                                            draught=ship.draught,
+                                            shipLength=ship.shipLength,
+                                            shipWidth=ship.shipWidth,
+                                            positionFixingDeviceType=ship.positionFixingDeviceType,
+                                            reportClass=ship.reportClass)
+
+                            await add_ship(data_)
+                            return data_.__dict__
                         except Exception as e:
                             print(f"Error processing JSON object: {obj}. Error: {e}")
     except Exception as e:
         print(f"Error fetching data from {url}. Error: {e}")
 
+async def add_ship(ship):
+    query = select(Ship).where(Ship.mmsi == ship.mmsi)
+    result_proxy = await session.execute(query)
+    existing_ship = result_proxy.fetchone()
+
+    if existing_ship is not None:
+        print("ship exists")
+        # A ship with this mmsi already exists
+        return
+
+    new_ship = Ship(mmsi=ship.mmsi,
+                    name=ship.name,
+                    msgtime=ship.msgtime,
+                    latitude=ship.latitude,
+                    longitude=ship.longitude,
+                    speedOverGround=ship.speedOverGround,
+                    courseOverGround=ship.courseOverGround,
+                    navigationalStatus=ship.navigationalStatus,
+                    rateOfTurn=ship.rateOfTurn,
+                    shipType=ship.shipType,
+                    trueHeading=ship.trueHeading,
+                    callSign=ship.callSign,
+                    destination=ship.destination,
+                    eta=ship.eta,
+                    imoNumber=ship.imoNumber,
+                    dimensionA=ship.dimensionA,
+                    dimensionB=ship.dimensionB,
+                    dimensionC=ship.dimensionC,
+                    dimensionD=ship.dimensionD,
+                    draught=ship.draught,
+                    shipLength=ship.shipLength,
+                    shipWidth=ship.shipWidth,
+                    positionFixingDeviceType=ship.positionFixingDeviceType,
+                    reportClass=ship.reportClass)
+
+    return session.add(new_ship)
+    try:
+        await sync_to_async(session.commit)()
+        print("Ship added to database")
+    except IntegrityError:
+        await sync_to_async(session.rollback)()
+        print("Integrity error occurred. Ship not added to database.")
 
 if __name__ == '__main__':
     asyncio.run(filter_ships())
