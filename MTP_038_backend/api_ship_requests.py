@@ -5,6 +5,7 @@ import requests
 import asgiref
 import json
 from typing import Dict
+from backend.database import database
 from MTP_038_backend import models
 # from celery import shared_task
 

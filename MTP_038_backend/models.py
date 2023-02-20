@@ -45,6 +45,8 @@ class Vessel:
         self.positionFixingDeviceType = data['properties']['positionFixingDeviceType']
         self.reportClass = data['properties']['reportClass']
 
+
+
 class Weather:
     def __init__(self,weather_data):
         self.temperature = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["air_temperature"]
