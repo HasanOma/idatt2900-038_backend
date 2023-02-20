@@ -1,7 +1,7 @@
 from django.db import models
 
 # Create your models here.
-class Ship:
+class ship_request:
     def __init__(self, data):
         self.courseOverGround = data['courseOverGround']
         self.latitude = data['latitude']
@@ -44,7 +44,6 @@ class Vessel:
         self.shipWidth = data['properties']['shipWidth']
         self.positionFixingDeviceType = data['properties']['positionFixingDeviceType']
         self.reportClass = data['properties']['reportClass']
-
 
 
 class Weather:

@@ -107,10 +107,10 @@ async def schedule_all_ships(method, headers, interval, payload, url, session, l
                 longitude = data['longitude']
                 if check_coordinates_valid():
                     if check_specific_coordinates(latitude, longitude):
-                        ship = models.Ship(data)
+                        ship = models.ship_request(data)
                         list_of_ships.append(vars(ship))
                 elif check_coordinates(latitude, longitude):
-                    ship = models.Ship(data)
+                    ship = models.ship_request(data)
                     list_of_ships.append(vars(ship))
     except Exception as e:
         print(f"Error during API request: {e}")
