@@ -3,6 +3,7 @@ from sqlalchemy import update
 from sqlalchemy.future import select
 from sqlalchemy.orm import relationship
 from django.db import models
+from sqlalchemy import update as sqlalchemy_update
 
 from backend.database import Base, async_db_session
 
@@ -16,6 +17,7 @@ class VesselBasic:
         self.msgtime = data['msgtime']
         self.speedOverGround = data['speedOverGround']
         self.courseOverGround = data['courseOverGround']
+        self.rateOfTurn = data['rateOfTurn']
         self.shipType = data['shipType']
         self.trueHeading = data['trueHeading']
 
@@ -29,7 +31,8 @@ class VesselBasic:
             'speedOverGround': self.speedOverGround,
             'courseOverGround': self.courseOverGround,
             'shipType': self.shipType,
-            'trueHeading': self.trueHeading
+            'trueHeading': self.trueHeading,
+            'rateOfTurn': self.rateOverTurn
         }
 
 
@@ -84,6 +87,7 @@ class ship_basic(Base):
     rateOfTurn = Column(Float, nullable=True)
     shipType = Column(Integer, nullable=True)
     trueHeading = Column(Integer, nullable=True)
+
     __table_args__ = {'extend_existing': True}
     __mapper_args__ = {"eager_defaults": True}
 
@@ -107,6 +111,15 @@ class ModelAdmin:
 
         await async_db_session.execute(query)
         await async_db_session.commit()
+
+    @classmethod
+    async def update_ship_fields(cls, mmsi, fields):
+        update_query = update(cls).where(cls.mmsi == mmsi).values(fields)
+        await async_db_session.execute(update_query)
+        await async_db_session.commit()
+        query = select(cls).where(cls.mmsi == mmsi)
+        result = await async_db_session.execute(query)
+        return result.scalar()
 
     @classmethod
     async def get(cls, id):
@@ -150,6 +163,34 @@ class Ship(Base, ModelAdmin):
     reportClass = Column(String(255), nullable=True)
 
     __mapper_args__ = {"eager_defaults": True}
+
+    def to_dict(self):
+        return {
+        'latitude': self.latitude ,
+        'longitude': self.longitude ,
+        'mmsi': self.mmsi ,
+        'name': self.name ,
+        'msgtime': self.msgtime ,
+        'speedOverGround': self.speedOverGround ,
+        'courseOverGround': self.courseOverGround ,
+        'navigationalStatus': self.navigationalStatus,
+        'rateOfTurn': self.rateOfTurn ,
+        'shipType': self.shipType ,
+        'trueHeading': self.trueHeading ,
+        'callSign': self.callSign,
+        'destination': self.destination ,
+        'eta': self.eta ,
+        'imoNumber': self.imoNumber ,
+        'dimensionA': self.dimensionA ,
+        'dimensionB': self.dimensionB ,
+        'dimensionC': self.dimensionC ,
+        'dimensionD': self.dimensionD ,
+        'draught': self.draught ,
+        'shipLength': self.shipLength ,
+        'shipWidth': self.shipWidth ,
+        'positionFixingDeviceType': self.positionFixingDeviceType ,
+        'reportClass': self.reportClass
+        }
 
 
 class Weather:

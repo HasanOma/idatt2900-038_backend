@@ -119,15 +119,32 @@ async def schedule_all_ships(method, headers, interval, payload, url, session, l
             api_response = await resp.json()
             for data in api_response:
                 if data:
+                    mmsi = int(data['mmsi'])
                     latitude = data['latitude']
                     longitude = data['longitude']
                     if check_coordinates_valid():
                         if check_specific_coordinates(latitude, longitude):
-                            ship = models.vessel_basic(data)
-                            list_of_ships.append(vars(ship))
+                            from_db = await Ship.get(mmsi)
+                            if from_db:
+                                data_ = models.VesselBasic(data)
+                                ship_ = ship_basic(**data_.__dict__)
+                                from_db = await update_ship_with_basic(ship_)
+                                list_of_ships.append(from_db.to_dict())
+                            else:
+                                ship = models.VesselBasic(data)
+                                await create_ship_with_basic(ship)
+                                list_of_ships.append(vars(ship))
                     elif check_coordinates(latitude, longitude):
-                        ship = models.vessel_basic(data)
-                        list_of_ships.append(vars(ship))
+                        from_db = await Ship.get(mmsi)
+                        if from_db:
+                            data_ = models.VesselBasic(data)
+                            ship_ = ship_basic(**data_.__dict__)
+                            from_db = await update_ship_with_basic(ship_)
+                            list_of_ships.append(from_db.to_dict())
+                        else:
+                            ship = models.VesselBasic(data)
+                            await create_ship_with_basic(ship)
+                            list_of_ships.append(vars(ship))
     except Exception as e:
         print(f"Error during API request: {e}")
         return []
@@ -135,6 +152,7 @@ async def schedule_all_ships(method, headers, interval, payload, url, session, l
     return list_of_ships
 
 async def all_ships():
+    await init_db()
     global bearer
     url = "https://live.ais.barentswatch.no/v1/latest/combined"
     method = "GET"
@@ -225,7 +243,7 @@ async def filter_ships():
                             data_ = models.Vessel(data_return)
                             ship = Ship(**data_.__dict__)
                             from_db = await Ship.get(ship.mmsi)
-                            print("from db ", from_db)
+                            print("from db ", from_db.to_dict())
                             if from_db:
                                 await update_ship(ship.mmsi, ship)
                             else:
@@ -270,7 +288,7 @@ async def create_ship(ship):
                                 reportClass=ship.reportClass)
 
     user = await Ship.get(ship.mmsi)
-    print("created ", user)
+    print("created ", user.to_dict())
 
 async def update_ship(mmsi, ship):
     await Ship.update(mmsi, mmsi=ship.mmsi,
@@ -298,6 +316,49 @@ async def update_ship(mmsi, ship):
                                 positionFixingDeviceType=ship.positionFixingDeviceType,
                                 reportClass=ship.reportClass)
     user = await Ship.get(mmsi)
-    print("updated ", user)
+    print("updated ", user.to_dict())
+
+async def create_ship_with_basic(ship):
+    await Ship.create(mmsi=ship.mmsi,
+                    name=ship.name,
+                    msgtime=ship.msgtime,
+                    latitude=ship.latitude,
+                    longitude=ship.longitude,
+                    speedOverGround=ship.speedOverGround,
+                    courseOverGround=ship.courseOverGround,
+                    rateOfTurn=ship.rateOfTurn,
+                    shipType=ship.shipType,
+                    trueHeading=ship.trueHeading,
+                    navigationalStatus=None,
+                    callSign=None,
+                    destination=None,
+                    eta=None,
+                    imoNumber=None,
+                    dimensionA=None,
+                    dimensionB=None,
+                    dimensionC=None,
+                    dimensionD=None,
+                    draught=None,
+                    shipLength=None,
+                    shipWidth=None,
+                    positionFixingDeviceType=None,
+                    reportClass=None
+                      )
+
+    user = await Ship.get(ship.mmsi)
+    print("created ", user.to_dict())
+
+async def update_ship_with_basic(ship):
+    fields_to_update = {
+        "msgtime": ship.msgtime,
+        "latitude": ship.latitude,
+        "longitude": ship.longitude,
+        "speedOverGround": ship.speedOverGround,
+        "courseOverGround": ship.courseOverGround,
+        "rateOfTurn": ship.rateOfTurn,
+        "shipType": ship.shipType,
+        "trueHeading": ship.trueHeading
+    }
+    return await Ship.update_ship_fields(ship.mmsi, fields=fields_to_update)
 
 #todo historic data for those ships
