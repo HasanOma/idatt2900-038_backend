@@ -102,15 +102,6 @@ async def token():
     while True:
         await schedule_token(method_post, headers, 3200, payload, url)
 
-async def get_ship_by_mmsi(session, ship):
-    mmsi = int(ship.mmsi)
-    query = select(Ship).where(Ship.mmsi == mmsi)
-    async with session.begin() as conn:
-        result_proxy = await conn.execute(query)
-        row = result_proxy.fetchone()
-    return row[0] if row else None
-
-
 async def schedule_all_ships(method, headers, interval, payload, url, session, list_of_ships):
     global filtered_ships
     await asyncio.sleep(interval)
@@ -125,25 +116,28 @@ async def schedule_all_ships(method, headers, interval, payload, url, session, l
                     if check_coordinates_valid():
                         if check_specific_coordinates(latitude, longitude):
                             from_db = await Ship.get(mmsi)
+                            print("\n\n\n\n\ from_db _________________         ", from_db.to_dict(),"\n\n\n\n\n")
                             if from_db:
                                 data_ = models.VesselBasic(data)
                                 ship_ = ship_basic(**data_.__dict__)
                                 from_db = await update_ship_with_basic(ship_)
+                                print("\n\n\n\n\ new from_db _________________         ", from_db.to_dict(), "\n\n\n\n\n")
                                 list_of_ships.append(from_db.to_dict())
                             else:
-                                ship = models.VesselBasic(data)
-                                await create_ship_with_basic(ship)
+                                await create_ship_with_basic(data)
                                 list_of_ships.append(vars(ship))
                     elif check_coordinates(latitude, longitude):
                         from_db = await Ship.get(mmsi)
+                        print("\n\n\n\n\ from_db _________________         ", from_db.to_dict(), "\n\n\n\n\n")
                         if from_db:
                             data_ = models.VesselBasic(data)
                             ship_ = ship_basic(**data_.__dict__)
                             from_db = await update_ship_with_basic(ship_)
+                            print("\n\n\n\n\ new from_db _________________         ", from_db.to_dict(), "\n\n\n\n\n")
                             list_of_ships.append(from_db.to_dict())
                         else:
-                            ship = models.VesselBasic(data)
-                            await create_ship_with_basic(ship)
+                            print("\n\n\n\n\ ikke fra db !!!!!!!!!! _________________         ", from_db.to_dict(), "\n\n\n\n\n")
+                            await create_ship_with_basic(data)
                             list_of_ships.append(vars(ship))
     except Exception as e:
         print(f"Error during API request: {e}")
@@ -319,16 +313,16 @@ async def update_ship(mmsi, ship):
     print("updated ", user.to_dict())
 
 async def create_ship_with_basic(ship):
-    await Ship.create(mmsi=ship.mmsi,
-                    name=ship.name,
-                    msgtime=ship.msgtime,
-                    latitude=ship.latitude,
-                    longitude=ship.longitude,
-                    speedOverGround=ship.speedOverGround,
-                    courseOverGround=ship.courseOverGround,
-                    rateOfTurn=ship.rateOfTurn,
-                    shipType=ship.shipType,
-                    trueHeading=ship.trueHeading,
+    await Ship.create(mmsi=ship['mmsi'],
+                    name=ship['name'],
+                    msgtime=ship['msgtime'],
+                    latitude=ship['latitude'],
+                    longitude=ship['longitude'],
+                    speedOverGround=ship['speedOverGround'],
+                    courseOverGround=ship['courseOverGround'],
+                    rateOfTurn=ship['rateOfTurn'],
+                    shipType=ship['shipType'],
+                    trueHeading=ship['trueHeading'],
                     navigationalStatus=None,
                     callSign=None,
                     destination=None,
