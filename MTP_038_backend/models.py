@@ -1,27 +1,42 @@
-from django.db import models
 from sqlalchemy import Column, Integer, String, Float
-from backend.database import engine
-from sqlalchemy.ext.declarative import declarative_base
-# Create your models here.
+from sqlalchemy import update
+from sqlalchemy.future import select
+from sqlalchemy.orm import relationship
+from django.db import models
 
-Base = declarative_base()
+from backend.database import Base, async_db_session
 
-class ship_request:
+
+class VesselBasic:
     def __init__(self, data):
-        self.courseOverGround = data['courseOverGround']
         self.latitude = data['latitude']
         self.longitude = data['longitude']
-        self.name = data['name']
-        self.rateOfTurn = data['rateOfTurn']
-        self.shipType = data['shipType']
-        self.speedOverGround = data['speedOverGround']
-        self.trueHeading = data['trueHeading']
         self.mmsi = data['mmsi']
+        self.name = data['name']
         self.msgtime = data['msgtime']
+        self.speedOverGround = data['speedOverGround']
+        self.courseOverGround = data['courseOverGround']
+        self.shipType = data['shipType']
+        self.trueHeading = data['trueHeading']
 
-class res_data:
+    def to_dict(self):
+        return {
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'mmsi': self.mmsi,
+            'name': self.name,
+            'msgtime': self.msgtime,
+            'speedOverGround': self.speedOverGround,
+            'courseOverGround': self.courseOverGround,
+            'shipType': self.shipType,
+            'trueHeading': self.trueHeading
+        }
+
+
+class ResData:
     def __init__(self, data):
         self.data = data
+
 
 class Vessel:
     def __init__(self, data):
@@ -55,12 +70,63 @@ class Vessel:
             return self.mmsi == other.mmsi
         return False
 
-class Ship(Base):
-    __tablename__ = 'ship'
+
+class ship_basic(Base):
+    __tablename__ = 'ship_basic'
 
     mmsi = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=True)
     msgtime = Column(String(255), nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    speedOverGround = Column(Float, nullable=True)
+    courseOverGround = Column(Float, nullable=True)
+    name = Column(String(255), nullable=True)
+    rateOfTurn = Column(Float, nullable=True)
+    shipType = Column(Integer, nullable=True)
+    trueHeading = Column(Integer, nullable=True)
+    __table_args__ = {'extend_existing': True}
+    __mapper_args__ = {"eager_defaults": True}
+
+class ModelAdmin:
+    @classmethod
+    async def create(cls, **kwargs):
+        instance = cls(**kwargs)
+        async_db_session.add(instance)
+        await async_db_session.commit()
+        return instance
+
+
+    @classmethod
+    async def update(cls, id, **kwargs):
+        query = (
+            sqlalchemy_update(cls)
+            .where(cls.mmsi == id)
+            .values(**kwargs)
+            .execution_options(synchronize_session="fetch")
+        )
+
+        await async_db_session.execute(query)
+        await async_db_session.commit()
+
+    @classmethod
+    async def get(cls, id):
+        query = select(cls).where(cls.mmsi == id)
+        result = await async_db_session.execute(query)
+        return result.scalar()
+
+    @classmethod
+    async def get_by_mmsi(cls, id, name):
+        query = select(cls).where(cls.mmsi == id and cls.name == name)
+        results = await async_db_session.execute(query)
+        (result,) = results.one()
+        return result
+
+class Ship(Base, ModelAdmin):
+    __tablename__ = 'ships'
+
+    mmsi = Column(Integer, primary_key=True)
+    name = Column(String(255))
+    msgtime = Column(String(255))
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     speedOverGround = Column(Float, nullable=True)
@@ -83,41 +149,8 @@ class Ship(Base):
     positionFixingDeviceType = Column(Integer, nullable=True)
     reportClass = Column(String(255), nullable=True)
 
-    def save_to_database(self, session):
-        # Check if the object already exists in the database
-        ship = session.query(Ship).get(self.mmsi)
-        if not ship:
-            # If the object does not exist, create a new one
-            ship = Ship(mmsi=self.mmsi)
+    __mapper_args__ = {"eager_defaults": True}
 
-        # Update the object attributes
-        ship.imoNumber = self.imoNumber
-        ship.name = self.name
-        ship.msgtime = self.msgtime
-        ship.speedOverGround = self.speedOverGround
-        ship.courseOverGround = self.courseOverGround
-        ship.navigationalStatus = self.navigationalStatus
-        ship.rateOfTurn = self.rateOfTurn
-        ship.shipType = self.shipType
-        ship.trueHeading = self.trueHeading
-        ship.callSign = self.callSign
-        ship.destination = self.destination
-        ship.eta = self.eta
-        ship.dimensionA = self.dimensionA
-        ship.dimensionB = self.dimensionB
-        ship.dimensionC = self.dimensionC
-        ship.dimensionD = self.dimensionD
-        ship.draught = self.draught
-        ship.shipLength = self.shipLength
-        ship.shipWidth = self.shipWidth
-        ship.positionFixingDeviceType = self.positionFixingDeviceType
-        ship.reportClass = self.reportClass
-
-        # Save the updated or new object to the database
-        session.add(ship)
-        session.commit()
-
-Base.metadata.create_all(engine)
 
 class Weather:
     def __init__(self,weather_data):
@@ -125,7 +158,8 @@ class Weather:
         self.wind_speed = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["wind_speed"]
 
 class Coordinate(models.Model):
-    north: models.DecimalField(max_digits=14)
-    west: models.DecimalField(max_digits=14)
-    south: models.DecimalField(max_digits=14)
-    east: models.DecimalField(max_digits=14)
+    north = models.DecimalField(max_digits=14, decimal_places=8)
+    west = models.DecimalField(max_digits=14, decimal_places=8)
+    south = models.DecimalField(max_digits=14, decimal_places=8)
+    east = models.DecimalField(max_digits=14, decimal_places=8)
+

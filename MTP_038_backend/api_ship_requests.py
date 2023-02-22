@@ -8,9 +8,9 @@ from typing import Dict
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from MTP_038_backend import models
-from backend.database import session
-from backend.database import add
+from backend.database import async_db_session
 from MTP_038_backend.models import Ship
+from MTP_038_backend.models import ship_basic
 # from celery import shared_task
 
 bearer = None
@@ -102,24 +102,32 @@ async def token():
     while True:
         await schedule_token(method_post, headers, 3200, payload, url)
 
+async def get_ship_by_mmsi(session, ship):
+    mmsi = int(ship.mmsi)
+    query = select(Ship).where(Ship.mmsi == mmsi)
+    async with session.begin() as conn:
+        result_proxy = await conn.execute(query)
+        row = result_proxy.fetchone()
+    return row[0] if row else None
+
+
 async def schedule_all_ships(method, headers, interval, payload, url, session, list_of_ships):
     global filtered_ships
-    for filtered_ship in filtered_ships:
-        await add_ship(filtered_ship)
     await asyncio.sleep(interval)
     try:
         async with session.request(method, url, data=payload, headers=headers) as resp:
             api_response = await resp.json()
             for data in api_response:
-                latitude = data['latitude']
-                longitude = data['longitude']
-                if check_coordinates_valid():
-                    if check_specific_coordinates(latitude, longitude):
-                        ship = models.ship_request(data)
+                if data:
+                    latitude = data['latitude']
+                    longitude = data['longitude']
+                    if check_coordinates_valid():
+                        if check_specific_coordinates(latitude, longitude):
+                            ship = models.vessel_basic(data)
+                            list_of_ships.append(vars(ship))
+                    elif check_coordinates(latitude, longitude):
+                        ship = models.vessel_basic(data)
                         list_of_ships.append(vars(ship))
-                elif check_coordinates(latitude, longitude):
-                    ship = models.ship_request(data)
-                    list_of_ships.append(vars(ship))
     except Exception as e:
         print(f"Error during API request: {e}")
         return []
@@ -135,9 +143,22 @@ async def all_ships():
     async with aiohttp.ClientSession() as session:
         while True:
             list_of_ships = []
-            return await schedule_all_ships(method, headers, 2, payload, url, session, list_of_ships)
+            return  await schedule_all_ships(method, headers, 2, payload, url, session, list_of_ships)
 
-# @shared_task
+async def update_the_list(list_of_ships):
+    list_to_return = []
+    for ship in list_of_ships:
+        vessel = models.vessel_basic(json.loads(json.dumps(ship)))
+        print(vars(vessel))
+        ship_ = models.ship_basic(**vessel.__dict__)
+        from_db = await add_ship(session, ship_)
+        if from_db is not None:
+            print("adding ships")
+            list_to_return.append(from_db)
+        else:
+            list_to_return.append(ship)
+    return list_to_return
+
 async def main():
     # print("here3")
     # await connect_to_db()
@@ -156,7 +177,12 @@ async def main():
     asyncio.create_task(token())
 
 
+async def init_db():
+    await async_db_session.init()
+    await async_db_session.create_all()
+
 async def filter_ships():
+    await init_db()
     global bearer
     global filtered_ships
     global filter_coordinates
@@ -197,13 +223,19 @@ async def filter_ships():
                         try:
                             data_return = json.loads(obj)
                             data_ = models.Vessel(data_return)
-
-                            add(ship)
-                            print(ship)
-                            if data_ not in filtered_ships:
-                                filtered_ships.append(data_)
-                                ship = Ship(**data_.__dict__)
-                            print(len(filtered_ships))
+                            ship = Ship(**data_.__dict__)
+                            from_db = await Ship.get(ship.mmsi)
+                            print("from db ", from_db)
+                            if from_db:
+                                await update_ship(ship.mmsi, ship)
+                            else:
+                                await create_ship(ship)
+                            # if data_ not in filtered_ships:
+                            #     filtered_ships.append(data_)
+                            #     ship = Ship(**data_.__dict__)
+                            #     await create_ship(ship)
+                            #     print(vars(ship))
+                            # print(len(filtered_ships))
                             print(data_.name)
                             return data_.__dict__
                         except Exception as e:
@@ -211,53 +243,61 @@ async def filter_ships():
     except Exception as e:
         print(f"Error fetching data from {url}. Error: {e}")
 
-async def add_ship(ship):
-    query = select(Ship).where(Ship.mmsi == ship.mmsi)
-    result_proxy = await session.execute(query)
-    existing_ship = result_proxy.fetchone()
+async def create_ship(ship):
+    await Ship.create(mmsi=ship.mmsi,
+                                name=ship.name,
+                                msgtime=ship.msgtime,
+                                latitude=ship.latitude,
+                                longitude=ship.longitude,
+                                speedOverGround=ship.speedOverGround,
+                                courseOverGround=ship.courseOverGround,
+                                navigationalStatus=ship.navigationalStatus,
+                                rateOfTurn=ship.rateOfTurn,
+                                shipType=ship.shipType,
+                                trueHeading=ship.trueHeading,
+                                callSign=ship.callSign,
+                                destination=ship.destination,
+                                eta=ship.eta,
+                                imoNumber=ship.imoNumber,
+                                dimensionA=ship.dimensionA,
+                                dimensionB=ship.dimensionB,
+                                dimensionC=ship.dimensionC,
+                                dimensionD=ship.dimensionD,
+                                draught=ship.draught,
+                                shipLength=ship.shipLength,
+                                shipWidth=ship.shipWidth,
+                                positionFixingDeviceType=ship.positionFixingDeviceType,
+                                reportClass=ship.reportClass)
 
-    if existing_ship is not None:
-        print("ship exists")
-        # A ship with this mmsi already exists
-        return
+    user = await Ship.get(ship.mmsi)
+    print("created ", user)
 
-    new_ship = Ship(mmsi=ship.mmsi,
-                    name=ship.name,
-                    msgtime=ship.msgtime,
-                    latitude=ship.latitude,
-                    longitude=ship.longitude,
-                    speedOverGround=ship.speedOverGround,
-                    courseOverGround=ship.courseOverGround,
-                    navigationalStatus=ship.navigationalStatus,
-                    rateOfTurn=ship.rateOfTurn,
-                    shipType=ship.shipType,
-                    trueHeading=ship.trueHeading,
-                    callSign=ship.callSign,
-                    destination=ship.destination,
-                    eta=ship.eta,
-                    imoNumber=ship.imoNumber,
-                    dimensionA=ship.dimensionA,
-                    dimensionB=ship.dimensionB,
-                    dimensionC=ship.dimensionC,
-                    dimensionD=ship.dimensionD,
-                    draught=ship.draught,
-                    shipLength=ship.shipLength,
-                    shipWidth=ship.shipWidth,
-                    positionFixingDeviceType=ship.positionFixingDeviceType,
-                    reportClass=ship.reportClass)
+async def update_ship(mmsi, ship):
+    await Ship.update(mmsi, mmsi=ship.mmsi,
+                                name=ship.name,
+                                msgtime=ship.msgtime,
+                                latitude=ship.latitude,
+                                longitude=ship.longitude,
+                                speedOverGround=ship.speedOverGround,
+                                courseOverGround=ship.courseOverGround,
+                                navigationalStatus=ship.navigationalStatus,
+                                rateOfTurn=ship.rateOfTurn,
+                                shipType=ship.shipType,
+                                trueHeading=ship.trueHeading,
+                                callSign=ship.callSign,
+                                destination=ship.destination,
+                                eta=ship.eta,
+                                imoNumber=ship.imoNumber,
+                                dimensionA=ship.dimensionA,
+                                dimensionB=ship.dimensionB,
+                                dimensionC=ship.dimensionC,
+                                dimensionD=ship.dimensionD,
+                                draught=ship.draught,
+                                shipLength=ship.shipLength,
+                                shipWidth=ship.shipWidth,
+                                positionFixingDeviceType=ship.positionFixingDeviceType,
+                                reportClass=ship.reportClass)
+    user = await Ship.get(mmsi)
+    print("updated ", user)
 
-    session.add(new_ship)
-    print("ship added")
-    try:
-        await sync_to_async(session.commit)()
-        print("Ship added to database")
-    except IntegrityError:
-        await sync_to_async(session.rollback)()
-        print("Integrity error occurred. Ship not added to database.")
-
-if __name__ == '__main__':
-    asyncio.run(filter_ships())
-
-#todo make models for the ship data we want to send to frontend
-#todo photo api
 #todo historic data for those ships

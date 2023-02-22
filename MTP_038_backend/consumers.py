@@ -27,7 +27,7 @@ class Ship_locations(AsyncWebsocketConsumer):
         await api_ship_requests.main()
         while True:
             message = await api_ship_requests.all_ships()
-            # print(message)
+            print(message)
             await self.send(text_data=json.dumps({
                 'message': message
             }))
