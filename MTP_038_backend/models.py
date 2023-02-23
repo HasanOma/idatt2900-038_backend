@@ -99,7 +99,6 @@ class ModelAdmin:
         await async_db_session.commit()
         return instance
 
-
     @classmethod
     async def update(cls, id, **kwargs):
         query = (
@@ -108,7 +107,6 @@ class ModelAdmin:
             .values(**kwargs)
             .execution_options(synchronize_session="fetch")
         )
-
         await async_db_session.execute(query)
         await async_db_session.commit()
 
@@ -125,7 +123,9 @@ class ModelAdmin:
     async def get(cls, id):
         query = select(cls).where(cls.mmsi == id)
         result = await async_db_session.execute(query)
-        return result.scalar()
+        res = result.scalar()
+        result.close()
+        return res
 
     @classmethod
     async def get_by_mmsi(cls, id, name):
