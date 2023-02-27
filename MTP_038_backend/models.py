@@ -138,8 +138,8 @@ class Ship(Base, ModelAdmin):
     __tablename__ = 'ships'
 
     mmsi = Column(Integer, primary_key=True)
-    name = Column(String(255))
-    msgtime = Column(String(255))
+    name = Column(String(255), nullable=True)
+    msgtime = Column(String(255), nullable=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     speedOverGround = Column(Float, nullable=True)
@@ -192,6 +192,11 @@ class Ship(Base, ModelAdmin):
         'reportClass': self.reportClass
         }
 
+class token(Base, ModelAdmin):
+    __tablename__ = 'api_token'
+    id = Column(Integer, primary_key=True)
+    bearer = Column(String(255), nullable=True)
+    __mapper_args__ = {"eager_defaults": True}
 
 class Weather:
     def __init__(self,weather_data):

@@ -3,20 +3,19 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from MTP_038_backend import api_ship_requests
 from MTP_038_backend import api_weather
+from MTP_038_backend import api_stream
 
 class Filtered_Ships(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
-        await api_ship_requests.main()
+        await api_stream.main()
         while True:
-            message = await api_ship_requests.filter_ships()
-            # print(message)
-            await self.send(text_data=json.dumps({
-                'message': message
-            }))
-
-            # Add a delay to avoid sending messages too frequently
-
+            message = await api_stream.filter_ships()
+            print(message)
+            # await self.send(text_data=json.dumps({
+            #     'message': message
+            # }))
+        # await api_stream.filter_ships()
 
     async def disconnect(self, close_code):
         pass
@@ -24,6 +23,7 @@ class Filtered_Ships(AsyncWebsocketConsumer):
 class Ship_locations(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
+        await api_ship_requests.main()
         while True:
             message = await api_ship_requests.all_ships()
             print(message)
