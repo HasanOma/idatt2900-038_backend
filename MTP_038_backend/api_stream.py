@@ -118,6 +118,8 @@ async def filter_ships():
                             from_db = await Ship.get(ship.mmsi)
                             if from_db is None:
                                 await create_ship(ship)
+                            else:
+                                await update_ship(ship)
                             return data_.__dict__
                         except Exception as e:
                             print(f"Error processing JSON object: {from_db}. Error: {e}")
@@ -126,54 +128,28 @@ async def filter_ships():
 
 async def create_ship(ship):
     print("creating ship ", ship.to_dict())
-    return await Ship.create(mmsi=ship.mmsi,
+    return await Ship.create(mmsi, mmsi=ship.mmsi,
                     name=ship.name,
                     msgtime=ship.msgtime,
                     latitude=ship.latitude,
                     longitude=ship.longitude,
                     speedOverGround=ship.speedOverGround,
-                    courseOverGround=ship.courseOverGround,
-                    rateOfTurn=ship.rateOfTurn,
                     shipType=ship.shipType,
-                    trueHeading=ship.trueHeading,
-                    navigationalStatus=ship.navigationalStatus,
-                    callSign=ship.callSign,
                     destination=ship.destination,
                     eta=ship.eta,
-                    imoNumber=ship.imoNumber,
-                    dimensionA=ship.dimensionA,
-                    dimensionB=ship.dimensionB,
-                    dimensionC=ship.dimensionC,
-                    dimensionD=ship.dimensionD,
-                    draught=ship.draught,
                     shipLength=ship.shipLength,
-                    shipWidth=ship.shipWidth,
-                    positionFixingDeviceType=ship.positionFixingDeviceType,
-                    reportClass=ship.reportClass)
+                    shipWidth=ship.shipWidth)
 
-async def update_ship(mmsi, ship):
+async def update_ship(ship):
     print("updating ship ", ship.to_dict())
-    return await Ship.update(mmsi, mmsi=ship.mmsi,
+    return await Ship.update(ship.mmsi, mmsi=ship.mmsi,
                     name=ship.name,
                     msgtime=ship.msgtime,
                     latitude=ship.latitude,
                     longitude=ship.longitude,
                     speedOverGround=ship.speedOverGround,
-                    courseOverGround=ship.courseOverGround,
-                    rateOfTurn=ship.rateOfTurn,
                     shipType=ship.shipType,
-                    trueHeading=ship.trueHeading,
-                    navigationalStatus=ship.navigationalStatus,
-                    callSign=ship.callSign,
                     destination=ship.destination,
                     eta=ship.eta,
-                    imoNumber=ship.imoNumber,
-                    dimensionA=ship.dimensionA,
-                    dimensionB=ship.dimensionB,
-                    dimensionC=ship.dimensionC,
-                    dimensionD=ship.dimensionD,
-                    draught=ship.draught,
                     shipLength=ship.shipLength,
-                    shipWidth=ship.shipWidth,
-                    positionFixingDeviceType=ship.positionFixingDeviceType,
-                    reportClass=ship.reportClass)
+                    shipWidth=ship.shipWidth)

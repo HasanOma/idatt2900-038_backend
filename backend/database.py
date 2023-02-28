@@ -14,7 +14,7 @@ class AsyncDatabaseSession:
 
     async def init(self):
         self._engine = create_async_engine("sqlite+aiosqlite:///db.sqlite3",
-            echo=True,
+            echo=False,
         )
 
         self._session = sessionmaker(
