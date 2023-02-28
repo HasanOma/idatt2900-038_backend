@@ -8,38 +8,20 @@ from sqlalchemy import update as sqlalchemy_update
 from backend.database import Base, async_db_session
 
 
-class VesselBasic:
-    def __init__(self, data):
-        self.latitude = data['latitude']
-        self.longitude = data['longitude']
-        self.mmsi = data['mmsi']
-        self.name = data['name']
-        self.msgtime = data['msgtime']
-        self.speedOverGround = data['speedOverGround']
-        self.courseOverGround = data['courseOverGround']
-        self.rateOfTurn = data['rateOfTurn']
-        self.shipType = data['shipType']
-        self.trueHeading = data['trueHeading']
-
-    def to_dict(self):
-        return {
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'mmsi': self.mmsi,
-            'name': self.name,
-            'msgtime': self.msgtime,
-            'speedOverGround': self.speedOverGround,
-            'courseOverGround': self.courseOverGround,
-            'shipType': self.shipType,
-            'trueHeading': self.trueHeading,
-            'rateOfTurn': self.rateOverTurn
-        }
-
-
-class ResData:
-    def __init__(self, data):
-        self.data = data
-
+# class VesselBasic:
+#     def __init__(self, data):
+#         self.latitude = data['latitude']
+#         self.longitude = data['longitude']
+#         self.mmsi = data['mmsi']
+#         self.timestamp = data['timestamp']
+#
+#     def to_dict(self):
+#         return {
+#             'latitude': self.latitude,
+#             'longitude': self.longitude,
+#             'mmsi': self.mmsi,
+#             'timestamp': self.timestamp,
+#         }
 
 class Vessel:
     def __init__(self, data):
@@ -49,47 +31,16 @@ class Vessel:
         self.name = data['properties']['name']
         self.msgtime = data['properties']['msgtime']
         self.speedOverGround = data['properties']['speedOverGround']
-        self.courseOverGround = data['properties']['courseOverGround']
-        self.navigationalStatus = data['properties']['navigationalStatus']
-        self.rateOfTurn = data['properties']['rateOfTurn']
         self.shipType = data['properties']['shipType']
-        self.trueHeading = data['properties']['trueHeading']
-        self.callSign = data['properties']['callSign']
         self.destination = data['properties']['destination']
         self.eta = data['properties']['eta']
-        self.imoNumber = data['properties']['imoNumber']
-        self.dimensionA = data['properties']['dimensionA']
-        self.dimensionB = data['properties']['dimensionB']
-        self.dimensionC = data['properties']['dimensionC']
-        self.dimensionD = data['properties']['dimensionD']
-        self.draught = data['properties']['draught']
         self.shipLength = data['properties']['shipLength']
         self.shipWidth = data['properties']['shipWidth']
-        self.positionFixingDeviceType = data['properties']['positionFixingDeviceType']
-        self.reportClass = data['properties']['reportClass']
 
     def __eq__(self, other):
         if isinstance(other, Vessel):
             return self.mmsi == other.mmsi
         return False
-
-
-class ship_basic(Base):
-    __tablename__ = 'ship_basic'
-
-    mmsi = Column(Integer, primary_key=True)
-    msgtime = Column(String(255), nullable=True)
-    latitude = Column(Float, nullable=True)
-    longitude = Column(Float, nullable=True)
-    speedOverGround = Column(Float, nullable=True)
-    courseOverGround = Column(Float, nullable=True)
-    name = Column(String(255), nullable=True)
-    rateOfTurn = Column(Float, nullable=True)
-    shipType = Column(Integer, nullable=True)
-    trueHeading = Column(Integer, nullable=True)
-
-    __table_args__ = {'extend_existing': True}
-    __mapper_args__ = {"eager_defaults": True}
 
 class ModelAdmin:
     @classmethod
@@ -98,6 +49,11 @@ class ModelAdmin:
         async_db_session.add(instance)
         await async_db_session.commit()
         return instance
+
+    @classmethod
+    async def create_multi(cls, ships):
+        async with async_db_session.begin():
+            async_db_session.add_all(ships)
 
     @classmethod
     async def update(cls, id, **kwargs):
@@ -134,33 +90,38 @@ class ModelAdmin:
         (result,) = results.one()
         return result
 
+class ship_basic(Base, ModelAdmin):
+    __tablename__ = 'ship_timestamp'
+
+    mmsi = Column(Integer, primary_key=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    timestamp = Column(String, nullable=True)
+
+    __mapper_args__ = {"eager_defaults": True}
+
+    def to_dict(self):
+        return {
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'mmsi': self.mmsi,
+            'timestamp': self.timestamp,
+        }
+
 class Ship(Base, ModelAdmin):
     __tablename__ = 'ships'
 
     mmsi = Column(Integer, primary_key=True)
-    name = Column(String(255))
-    msgtime = Column(String(255))
+    name = Column(String(255), nullable=True)
+    msgtime = Column(String(255), nullable=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     speedOverGround = Column(Float, nullable=True)
-    courseOverGround = Column(Float, nullable=True)
-    navigationalStatus = Column(Integer, nullable=True)
-    rateOfTurn = Column(Float, nullable=True)
     shipType = Column(Integer, nullable=True)
-    trueHeading = Column(Integer, nullable=True)
-    callSign = Column(String(255), nullable=True)
     destination = Column(String(255), nullable=True)
     eta = Column(String(255), nullable=True)
-    imoNumber = Column(Integer, nullable=True)
-    dimensionA = Column(Integer, nullable=True)
-    dimensionB = Column(Integer, nullable=True)
-    dimensionC = Column(Integer, nullable=True)
-    dimensionD = Column(Integer, nullable=True)
-    draught = Column(Float, nullable=True)
     shipLength = Column(Float, nullable=True)
     shipWidth = Column(Float, nullable=True)
-    positionFixingDeviceType = Column(Integer, nullable=True)
-    reportClass = Column(String(255), nullable=True)
 
     __mapper_args__ = {"eager_defaults": True}
 
@@ -172,26 +133,17 @@ class Ship(Base, ModelAdmin):
         'name': self.name ,
         'msgtime': self.msgtime ,
         'speedOverGround': self.speedOverGround ,
-        'courseOverGround': self.courseOverGround ,
-        'navigationalStatus': self.navigationalStatus,
-        'rateOfTurn': self.rateOfTurn ,
-        'shipType': self.shipType ,
-        'trueHeading': self.trueHeading ,
-        'callSign': self.callSign,
         'destination': self.destination ,
         'eta': self.eta ,
-        'imoNumber': self.imoNumber ,
-        'dimensionA': self.dimensionA ,
-        'dimensionB': self.dimensionB ,
-        'dimensionC': self.dimensionC ,
-        'dimensionD': self.dimensionD ,
-        'draught': self.draught ,
         'shipLength': self.shipLength ,
-        'shipWidth': self.shipWidth ,
-        'positionFixingDeviceType': self.positionFixingDeviceType ,
-        'reportClass': self.reportClass
+        'shipWidth': self.shipWidth
         }
 
+class token(Base, ModelAdmin):
+    __tablename__ = 'api_token'
+    id = Column(Integer, primary_key=True)
+    bearer = Column(String(255), nullable=True)
+    __mapper_args__ = {"eager_defaults": True}
 
 class Weather:
     def __init__(self,weather_data):
