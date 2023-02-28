@@ -12,9 +12,9 @@ class Filtered_Ships(AsyncWebsocketConsumer):
         while True:
             message = await api_stream.filter_ships()
             print(message)
-            # await self.send(text_data=json.dumps({
-            #     'message': message
-            # }))
+            await self.send(text_data=json.dumps({
+                'message': message
+            }))
         # await api_stream.filter_ships()
 
     async def disconnect(self, close_code):

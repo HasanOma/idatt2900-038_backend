@@ -116,10 +116,8 @@ async def filter_ships():
                             data_ = models.Vessel(data_return)
                             ship = Ship(**data_.__dict__)
                             from_db = await Ship.get(ship.mmsi)
-                            # print("from db ", from_db.to_dict())
                             if from_db is None:
                                 await create_ship(ship)
-                            # print(data_.name)
                             return data_.__dict__
                         except Exception as e:
                             print(f"Error processing JSON object: {from_db}. Error: {e}")
