@@ -36,9 +36,9 @@ def set_coordinates(north, west, south, east):
     ]
     print("new filter_coordinates   ", filter_coordinates)
 
-async def init_db():
-    await async_db_session.init()
-    await async_db_session.create_all()
+# async def init_db():
+#     await async_db_session.init()
+#     await async_db_session.create_all()
 
 async def token():
     global bearer
@@ -72,7 +72,7 @@ async def main():
             api_response = await resp.json()
             bearer = api_response['access_token']
     asyncio.create_task(token())
-    await init_db()
+    # await init_db()
 
 async def filter_ships():
     global bearer
@@ -105,6 +105,7 @@ async def filter_ships():
                 response_content = response.content
                 while True:
                     chunk = await response_content.read(chunk_size)
+                    from_db = None
                     if not chunk:
                         break
                     json_objects = chunk.decode("utf-8").split("\n")
@@ -119,7 +120,11 @@ async def filter_ships():
                             if from_db is None:
                                 await create_ship(ship)
                             else:
-                                await update_ship(ship)
+                                if round(from_db.latitude, 4) == round(ship.latitude, 4) and round(from_db.longitude,
+                                    4) == round(ship.longitude, 4):
+                                    return data_.__dict__
+                                else:
+                                    await update_ship(ship)
                             return data_.__dict__
                         except Exception as e:
                             print(f"Error processing JSON object: {from_db}. Error: {e}")
@@ -128,7 +133,7 @@ async def filter_ships():
 
 async def create_ship(ship):
     print("creating ship ", ship.to_dict())
-    return await Ship.create(mmsi, mmsi=ship.mmsi,
+    return await Ship.create(mmsi=ship.mmsi,
                     name=ship.name,
                     msgtime=ship.msgtime,
                     latitude=ship.latitude,

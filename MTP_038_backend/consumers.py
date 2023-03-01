@@ -4,6 +4,7 @@ import json
 from MTP_038_backend import api_ship_requests
 from MTP_038_backend import api_weather
 from MTP_038_backend import api_stream
+from backend.database import session
 
 class Filtered_Ships(AsyncWebsocketConsumer):
     async def connect(self):

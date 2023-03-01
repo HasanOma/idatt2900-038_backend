@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from django.db import models
 from sqlalchemy import update as sqlalchemy_update
 
-from backend.database import Base, async_db_session
+from backend.database import Base, async_db_session, session
 
 
 # class VesselBasic:
@@ -57,38 +57,39 @@ class ModelAdmin:
 
     @classmethod
     async def update(cls, id, **kwargs):
-        query = (
-            sqlalchemy_update(cls)
-            .where(cls.mmsi == id)
-            .values(**kwargs)
-            .execution_options(synchronize_session="fetch")
-        )
-        await async_db_session.execute(query)
-        await async_db_session.commit()
+        async with async_db_session.begin():
+            query = (
+                sqlalchemy_update(cls)
+                .where(cls.mmsi == id)
+                .values(**kwargs)
+                .execution_options(synchronize_session="fetch")
+            )
+            await async_db_session.execute(query)
 
     @classmethod
     async def update_ship_fields(cls, mmsi, fields):
-        update_query = update(cls).where(cls.mmsi == mmsi).values(fields)
-        await async_db_session.execute(update_query)
-        await async_db_session.commit()
-        query = select(cls).where(cls.mmsi == mmsi)
-        result = await async_db_session.execute(query)
-        return result.scalar()
+        async with async_db_session.begin():
+            update_query = update(cls).where(cls.mmsi == mmsi).values(fields)
+            await async_db_session.execute(update_query)
+            query = select(cls).where(cls.mmsi == mmsi)
+            result = await async_db_session.execute(query)
+            return result.scalar()
 
     @classmethod
     async def get(cls, id):
-        query = select(cls).where(cls.mmsi == id)
-        result = await async_db_session.execute(query)
-        res = result.scalar()
-        result.close()
-        return res
+        async with async_db_session.begin():
+            query = select(cls).where(cls.mmsi == id)
+            result = await async_db_session.execute(query)
+            res = result.scalar()
+            result.close()
+            return res
 
     @classmethod
     async def get_by_mmsi(cls, id, name):
-        query = select(cls).where(cls.mmsi == id and cls.name == name)
-        results = await async_db_session.execute(query)
-        (result,) = results.one()
-        return result
+        async with async_db_session.begin():
+            query = select(cls).where(cls.mmsi == id and cls.name == name)
+            (result,) = await async_db_session.execute(query).one()
+            return result
 
 class ship_basic(Base, ModelAdmin):
     __tablename__ = 'ship_timestamp'
@@ -135,6 +136,7 @@ class Ship(Base, ModelAdmin):
         'speedOverGround': self.speedOverGround ,
         'destination': self.destination ,
         'eta': self.eta ,
+        'shipType': self.shipType ,
         'shipLength': self.shipLength ,
         'shipWidth': self.shipWidth
         }
