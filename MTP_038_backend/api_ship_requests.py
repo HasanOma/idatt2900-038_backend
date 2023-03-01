@@ -160,15 +160,21 @@ async def create_or_update_ship_with_basic(ship):
                     speedOverGround=ship['speedOverGround'],
                     shipType=ship['shipType'])
     db_ship = await Ship.get(ship['mmsi'])
-    if db_ship.latitude == ship['latitude'] and db_ship.longitude == ship['longitude']:
-        return db_ship.to_dict()
-    else:
-        if db_ship is not None:
-            await db_ship.update_ship_fields(mmsi=ship['mmsi'], fields=fields_to_update)
-            updated_ship = await Ship.get(ship['mmsi'])
-            return updated_ship.to_dict()
+    if db_ship is not None:
+        if db_ship.latitude == ship['latitude'] and db_ship.longitude == ship['longitude']:
+            return db_ship.to_dict()
         else:
-            new_ship_dict = new_ship.__dict__
-            new_ship_dict.pop('_sa_instance_state', None)
-            created_ship = await Ship.create(mmsi=ship['mmsi'], name=ship['name'], **fields_to_update)
-            return created_ship.to_dict()
+            if db_ship is not None:
+                await db_ship.update_ship_fields(mmsi=ship['mmsi'], fields=fields_to_update)
+                updated_ship = await Ship.get(ship['mmsi'])
+                return updated_ship.to_dict()
+            else:
+                new_ship_dict = new_ship.__dict__
+                new_ship_dict.pop('_sa_instance_state', None)
+                created_ship = await Ship.create(mmsi=ship['mmsi'], name=ship['name'], **fields_to_update)
+                return created_ship.to_dict()
+    else:
+        new_ship_dict = new_ship.__dict__
+        new_ship_dict.pop('_sa_instance_state', None)
+        created_ship = await Ship.create(mmsi=ship['mmsi'], name=ship['name'], **fields_to_update)
+        return created_ship.to_dict()

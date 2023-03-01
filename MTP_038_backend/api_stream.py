@@ -119,12 +119,6 @@ async def filter_ships():
                             from_db = await Ship.get(ship.mmsi)
                             if from_db is None:
                                 await create_ship(ship)
-                            else:
-                                if round(from_db.latitude, 4) == round(ship.latitude, 4) and round(from_db.longitude,
-                                    4) == round(ship.longitude, 4):
-                                    return data_.__dict__
-                                else:
-                                    await update_ship(ship)
                             return data_.__dict__
                         except Exception as e:
                             print(f"Error processing JSON object: {from_db}. Error: {e}")
