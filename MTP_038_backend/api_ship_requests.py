@@ -135,9 +135,10 @@ async def schedule_all_ships(method, headers, interval, payload, url, session, b
                         # if ship and check_ship_coordinates(ship, boundary_coordinates):
                         new_ship = await create_or_update_ship_with_basic(ship)
                         tasks.append(new_ship)
-                elif check_coordinates(latitude, longitude):
-                    new_ship = await create_or_update_ship_with_basic(ship)
-                    tasks.append(new_ship)
+                else:
+                    if check_coordinates(latitude, longitude):
+                        new_ship = await create_or_update_ship_with_basic(ship)
+                        tasks.append(new_ship)
             results = tasks
             print(f"Number of ships: {len(results)}")
             return results
