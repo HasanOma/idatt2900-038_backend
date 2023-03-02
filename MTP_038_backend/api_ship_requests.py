@@ -110,7 +110,7 @@ async def all_ships():
     async with aiohttp.ClientSession() as session:
         while True:
             list_of_ships = []
-            return  await schedule_all_ships(method, headers, 2, payload, url, session, list_of_ships)
+            return await schedule_all_ships(method, headers, 2, payload, url, session, list_of_ships)
 
 async def check_ship_coordinates(ship, boundary_coordinates):
     latitude = ship['latitude']
@@ -143,7 +143,7 @@ async def schedule_all_ships(method, headers, interval, payload, url, session, b
             return results
     except Exception as e:
         print(f"Error during API request: {e}")
-        return []
+        return
 
 async def create_or_update_ship_with_basic(ship):
     fields_to_update = {
