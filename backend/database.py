@@ -17,5 +17,3 @@ database = databases.Database(DATABASE_URL)
 async def initialize_database():
     await database.connect()
     Base.metadata.create_all(bind=engine)
-
-database = initialize_database()
