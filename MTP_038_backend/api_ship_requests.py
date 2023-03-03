@@ -8,7 +8,7 @@ from typing import Dict
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from MTP_038_backend import models
-from backend.database import async_db_session
+# from backend.database import async_db_session
 from MTP_038_backend.models import Ship
 from MTP_038_backend.models import ship_basic
 # from celery import shared_task

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+from databases import DatabaseURL
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,7 +34,6 @@ INSTALLED_APPS = [
     'daphne',
     'channels',
     'celery',
-    'redis',
     'rest_framework',
     'corsheaders',
     'django.contrib.admin',
@@ -96,9 +96,13 @@ CELERY_BROKER_URL = 'redis://localhost:6379'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'postgres',
+        'USER': 'mtp038',
+        'PASSWORD': 'qwertY1!',
+        'HOST': 'mtp-db.postgres.database.azure.com',
+        'PORT': '5432',
     }
 }
 

@@ -1,12 +1,13 @@
-from sqlalchemy import Column, Integer, String, Float
-from sqlalchemy import update
-from sqlalchemy.future import select
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, Float, text, update
+from sqlalchemy.orm import Session
 from django.db import models
-from sqlalchemy import update as sqlalchemy_update
 
-from backend.database import Base, async_db_session, session
+from sqlalchemy.ext.declarative import declarative_base
 
+from backend.database import engine, database
+
+
+Base = declarative_base()
 
 # class VesselBasic:
 #     def __init__(self, data):
@@ -45,69 +46,53 @@ class Vessel:
 class ModelAdmin:
     @classmethod
     async def create(cls, **kwargs):
-        instance = cls(**kwargs)
-        async_db_session.add(instance)
-        await async_db_session.commit()
-        return instance
+        print("creating ship ", kwargs)
+        query = cls.__table__.insert().values(**kwargs)
+        return await database.execute(query)
 
     @classmethod
     async def create_multi(cls, ships):
-        async with async_db_session.begin():
-            async_db_session.add_all(ships)
+        query = cls.__table__.insert().values(ships)
+        return await database.execute(query)
 
     @classmethod
     async def update(cls, id, **kwargs):
-        async with async_db_session.begin():
-            query = (
-                sqlalchemy_update(cls)
-                .where(cls.mmsi == id)
-                .values(**kwargs)
-                .execution_options(synchronize_session="fetch")
-            )
-            await async_db_session.execute(query)
+        query = (
+            update(cls.__table__)
+            .where(cls.mmsi == id)
+            .values(**kwargs)
+        )
+        await database.execute(query)
 
     @classmethod
     async def update_ship_fields(cls, mmsi, fields):
-        async with async_db_session.begin():
-            update_query = update(cls).where(cls.mmsi == mmsi).values(fields)
-            await async_db_session.execute(update_query)
-            query = select(cls).where(cls.mmsi == mmsi)
-            result = await async_db_session.execute(query)
-            return result.scalar()
+        query = (
+            cls.__table__.update()
+            .where(cls.mmsi == mmsi)
+            .values(fields)
+            .returning(text("*"))
+        )
+        result = await database.fetch_one(query)
+
+        # update the instance in the session
+        instance = cls(**result)
+        for key, value in fields.items():
+            setattr(instance, key, value)
+        session = Session(bind=engine)
+        session.merge(instance)
+        await database.commit()
+
+        return instance
 
     @classmethod
     async def get(cls, id):
-        async with async_db_session.begin():
-            query = select(cls).where(cls.mmsi == id)
-            result = await async_db_session.execute(query)
-            res = result.scalar()
-            result.close()
-            return res
+        query = cls.__table__.select().where(cls.mmsi == id)
+        return await database.fetch_one(query)
 
     @classmethod
     async def get_by_mmsi(cls, id, name):
-        async with async_db_session.begin():
-            query = select(cls).where(cls.mmsi == id and cls.name == name)
-            (result,) = await async_db_session.execute(query).one()
-            return result
-
-class ship_basic(Base, ModelAdmin):
-    __tablename__ = 'ship_timestamp'
-
-    mmsi = Column(Integer, primary_key=True)
-    latitude = Column(Float, nullable=True)
-    longitude = Column(Float, nullable=True)
-    timestamp = Column(String, nullable=True)
-
-    __mapper_args__ = {"eager_defaults": True}
-
-    def to_dict(self):
-        return {
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'mmsi': self.mmsi,
-            'timestamp': self.timestamp,
-        }
+        query = cls.__table__.select().where(cls.mmsi == id and cls.name == name)
+        return await database.fetch_one(query)
 
 class Ship(Base, ModelAdmin):
     __tablename__ = 'ships'
@@ -141,6 +126,24 @@ class Ship(Base, ModelAdmin):
         'shipWidth': self.shipWidth
         }
 
+class ship_basic(Base, ModelAdmin):
+    __tablename__ = 'ship_timestamp'
+
+    mmsi = Column(Integer, primary_key=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    timestamp = Column(String, nullable=True)
+
+    __mapper_args__ = {"eager_defaults": True}
+
+    def to_dict(self):
+        return {
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'mmsi': self.mmsi,
+            'timestamp': self.timestamp,
+        }
+
 class token(Base, ModelAdmin):
     __tablename__ = 'api_token'
     id = Column(Integer, primary_key=True)
@@ -153,8 +156,9 @@ class Weather:
         self.wind_speed = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["wind_speed"]
 
 class Coordinate(models.Model):
-    north = models.DecimalField(max_digits=14, decimal_places=8)
-    west = models.DecimalField(max_digits=14, decimal_places=8)
-    south = models.DecimalField(max_digits=14, decimal_places=8)
-    east = models.DecimalField(max_digits=14, decimal_places=8)
+    north = models.DecimalField(max_digits=14, decimal_places=8, null=True)
+    west = models.DecimalField(max_digits=14, decimal_places=8, null=True)
+    south = models.DecimalField(max_digits=14, decimal_places=8, null=True)
+    east = models.DecimalField(max_digits=14, decimal_places=8, null=True)
+
 

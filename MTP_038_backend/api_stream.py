@@ -7,7 +7,7 @@ from typing import Dict
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from MTP_038_backend import models
-from backend.database import async_db_session
+# from backend.database import async_db_session
 from MTP_038_backend.models import Ship
 
 bearer = None
@@ -117,8 +117,10 @@ async def filter_ships():
                             data_ = models.Vessel(data_return)
                             ship = Ship(**data_.__dict__)
                             from_db = await Ship.get(ship.mmsi)
+                            print("from_db", from_db)
                             if from_db is None:
                                 await create_ship(ship)
+                                print("created ship", ship)
                             return data_.__dict__
                         except Exception as e:
                             print(f"Error processing JSON object: {from_db}. Error: {e}")
