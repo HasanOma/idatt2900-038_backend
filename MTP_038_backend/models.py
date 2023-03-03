@@ -44,7 +44,53 @@ class Vessel:
             return self.mmsi == other.mmsi
         return False
 
+class ModelAdmin:
+    @classmethod
+    async def create(cls, **kwargs):
+        instance = cls(**kwargs)
+        async_db_session.add(instance)
+        await async_db_session.commit()
+        return instance
 
+    @classmethod
+    async def create_multi(cls, ships):
+        async with async_db_session.begin():
+            async_db_session.add_all(ships)
+
+    @classmethod
+    async def update(cls, id, **kwargs):
+        query = (
+            sqlalchemy_update(cls)
+            .where(cls.mmsi == id)
+            .values(**kwargs)
+            .execution_options(synchronize_session="fetch")
+        )
+        await async_db_session.execute(query)
+        await async_db_session.commit()
+
+    @classmethod
+    async def update_ship_fields(cls, mmsi, fields):
+        update_query = update(cls).where(cls.mmsi == mmsi).values(fields)
+        await async_db_session.execute(update_query)
+        await async_db_session.commit()
+        query = select(cls).where(cls.mmsi == mmsi)
+        result = await async_db_session.execute(query)
+        return result.scalar()
+
+    @classmethod
+    async def get(cls, id):
+        query = select(cls).where(cls.mmsi == id)
+        result = await async_db_session.execute(query)
+        res = result.scalar()
+        result.close()
+        return res
+
+    @classmethod
+    async def get_by_mmsi(cls, id, name):
+        query = select(cls).where(cls.mmsi == id and cls.name == name)
+        results = await async_db_session.execute(query)
+        (result,) = results.one()
+        return result
 
 # class ModelAdmin:
 #     @classmethod
