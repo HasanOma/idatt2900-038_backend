@@ -4,9 +4,9 @@ from django.db import models
 
 from sqlalchemy.ext.declarative import declarative_base
 
-from backend.database import engine, SessionLocal
+# from backend.database import engine, SessionLocal
 
-session = SessionLocal()
+from backend.database import async_db_session
 
 Base = declarative_base()
 
@@ -44,56 +44,58 @@ class Vessel:
             return self.mmsi == other.mmsi
         return False
 
-class ModelAdmin:
-    @classmethod
-    async def create(cls, **kwargs):
-        print("creating ship ", kwargs)
-        query = cls.__table__.insert().values(**kwargs)
-        return await session.execute(query)
 
-    @classmethod
-    async def create_multi(cls, ships):
-        query = cls.__table__.insert().values(ships)
-        return await session.execute(query)
 
-    @classmethod
-    async def update(cls, id, **kwargs):
-        query = (
-            update(cls.__table__)
-            .where(cls.mmsi == id)
-            .values(**kwargs)
-        )
-        await session.execute(query)
-
-    @classmethod
-    async def update_ship_fields(cls, mmsi, fields):
-        query = (
-            cls.__table__.update()
-            .where(cls.mmsi == mmsi)
-            .values(fields)
-            .returning(text("*"))
-        )
-        result = await session.execute(query).one()
-
-        # update the instance in the session
-        instance = cls(**result)
-        for key, value in fields.items():
-            setattr(instance, key, value)
-        session2 = Session(bind=engine)
-        session2.merge(instance)
-        await session.commit()
-
-        return instance
-
-    @classmethod
-    async def get(cls, id):
-        query = session.query(cls).filter(cls.mmsi == id)
-        return await query.one_or_none()
-
-    @classmethod
-    async def get_by_mmsi(cls, id, name):
-        query = session.query(cls).filter(cls.mmsi == id, cls.name == name)
-        return await query.one_or_none()
+# class ModelAdmin:
+#     @classmethod
+#     async def create(cls, **kwargs):
+#         print("creating ship ", kwargs)
+#         query = cls.__table__.insert().values(**kwargs)
+#         return await session.execute(query)
+#
+#     @classmethod
+#     async def create_multi(cls, ships):
+#         query = cls.__table__.insert().values(ships)
+#         return await session.execute(query)
+#
+#     @classmethod
+#     async def update(cls, id, **kwargs):
+#         query = (
+#             update(cls.__table__)
+#             .where(cls.mmsi == id)
+#             .values(**kwargs)
+#         )
+#         await session.execute(query)
+#
+#     @classmethod
+#     async def update_ship_fields(cls, mmsi, fields):
+#         query = (
+#             cls.__table__.update()
+#             .where(cls.mmsi == mmsi)
+#             .values(fields)
+#             .returning(text("*"))
+#         )
+#         result = await session.execute(query).one()
+#
+#         # update the instance in the session
+#         instance = cls(**result)
+#         for key, value in fields.items():
+#             setattr(instance, key, value)
+#         session2 = Session(bind=engine)
+#         session2.merge(instance)
+#         await session.commit()
+#
+#         return instance
+#
+#     @classmethod
+#     async def get(cls, id):
+#         query = session.query(cls).filter(cls.mmsi == id)
+#         return await query.one_or_none()
+#
+#     @classmethod
+#     async def get_by_mmsi(cls, id, name):
+#         query = session.query(cls).filter(cls.mmsi == id, cls.name == name)
+#         return await query.one_or_none()
 
 class Ship(Base, ModelAdmin):
     __tablename__ = 'ships'
