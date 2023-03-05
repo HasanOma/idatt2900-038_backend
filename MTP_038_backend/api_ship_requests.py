@@ -144,14 +144,16 @@ async def schedule_all_ships(method, headers, interval, payload, url, session, b
             return results
     except Exception as e:
         print(f"Error during API request: {e}")
-        return []
+        return None
 
 async def create_or_update_ship_with_basic(ship):
     fields_to_update = {
-        "msgtime": ship['msgtime'],
-        "latitude": ship['latitude'],
-        "longitude": ship['longitude'],
-        "speedOverGround": ship['speedOverGround']
+        'mmsi': ship['mmsi'],
+        'name': ship['name'],
+        'msgtime': ship['msgtime'],
+        'latitude': ship['latitude'],
+        'longitude': ship['longitude'],
+        'speedOverGround': ship['speedOverGround']
     }
     new_ship = Ship(mmsi=ship['mmsi'],
                     name=ship['name'],
@@ -162,20 +164,30 @@ async def create_or_update_ship_with_basic(ship):
                     shipType=ship['shipType'])
     db_ship = await Ship.get(ship['mmsi'])
     if db_ship is not None:
-        if db_ship.latitude == ship['latitude'] and db_ship.longitude == ship['longitude']:
-            return db_ship.to_dict()
+        db_ship_dict = dict(zip(('mmsi', 'name', 'msgtime', 'latitude', 'longitude', 'speedOverGround', 'shipType',
+                                 'destination', 'eta', 'shipLength', 'shipWidth'), db_ship))
+        db_to_ship = Ship(**db_ship_dict)
+        if db_ship_dict['latitude'] == ship['latitude'] and db_ship_dict['longitude'] == ship['longitude']:
+            print(f"Ship with mmsi: {ship['mmsi']} is already in database")
+            return db_ship_dict
         else:
-            if db_ship is not None:
-                await db_ship.update_ship_fields(mmsi=ship['mmsi'], fields=fields_to_update)
+            if db_to_ship is not None:
+                print(f"Updating ship with mmsi: {ship['mmsi']}")
+                db_to_ship.update_ship_fields(**fields_to_update)
                 updated_ship = await Ship.get(ship['mmsi'])
-                return updated_ship.to_dict()
+                db_ship_dict = dict(
+                    zip(('mmsi', 'name', 'msgtime', 'latitude', 'longitude', 'speedOverGround', 'shipType',
+                         'destination', 'eta', 'shipLength', 'shipWidth'), updated_ship))
+                return db_ship_dict
             else:
-                new_ship_dict = new_ship.__dict__
-                new_ship_dict.pop('_sa_instance_state', None)
-                created_ship = await Ship.create(mmsi=ship['mmsi'], name=ship['name'], **fields_to_update)
-                return created_ship.to_dict()
+                print(f"Creating new ship with mmsi: {ship['mmsi']}")
+                created_ship = await Ship.create_from_basic(**fields_to_update)
+                db_ship_dict = dict(zip(('mmsi', 'name', 'msgtime', 'latitude', 'longitude', 'speedOverGround', 'shipType',
+                                 'destination', 'eta', 'shipLength', 'shipWidth'), created_ship))
+                return db_ship_dict
     else:
-        new_ship_dict = new_ship.__dict__
-        new_ship_dict.pop('_sa_instance_state', None)
-        created_ship = await Ship.create(mmsi=ship['mmsi'], name=ship['name'], **fields_to_update)
-        return created_ship.to_dict()
+        print(f"Creating new ship with mmsi: {ship['mmsi']}")
+        created_ship = await Ship.create_from_basic(**fields_to_update)
+        db_ship_dict = dict(zip(('mmsi', 'name', 'msgtime', 'latitude', 'longitude', 'speedOverGround', 'shipType',
+                                 'destination', 'eta', 'shipLength', 'shipWidth'), created_ship))
+        return db_ship_dict
