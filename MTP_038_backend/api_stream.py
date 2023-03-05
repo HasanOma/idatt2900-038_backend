@@ -114,32 +114,26 @@ async def filter_ships():
                             continue
                         try:
                             data_return = json.loads(obj)
+                            if data_return is None:
+                                raise ValueError("JSON data is empty or invalid")
                             data_ = models.Vessel(data_return)
                             ship = Ship(**data_.__dict__)
+                            print("ship", ship)
                             from_db = await Ship.get(ship.mmsi)
                             print("from_db", from_db)
                             if from_db is None:
+                                print("ship not in db, creating ship")
                                 await create_ship(ship)
                                 print("created ship", ship)
                             return data_.__dict__
                         except Exception as e:
-                            print(f"Error processing JSON object: {from_db}. Error: {e}")
+                            print(f"Error processing JSON object: {obj}. Error: {e}")
     except Exception as e:
         print(f"Error fetching data from {url}. Error: {e}")
 
 async def create_ship(ship):
-    print("creating ship ", ship.to_dict())
-    return await Ship.create(mmsi=ship.mmsi,
-                    name=ship.name,
-                    msgtime=ship.msgtime,
-                    latitude=ship.latitude,
-                    longitude=ship.longitude,
-                    speedOverGround=ship.speedOverGround,
-                    shipType=ship.shipType,
-                    destination=ship.destination,
-                    eta=ship.eta,
-                    shipLength=ship.shipLength,
-                    shipWidth=ship.shipWidth)
+    # print("creating ship ", ship.to_dict())
+    return await Ship.create(**ship.to_dict())
 
 async def update_ship(ship):
     print("updating ship ", ship.to_dict())
