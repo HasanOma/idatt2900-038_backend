@@ -18,31 +18,21 @@
 #     await database.connect()
 #     Base.metadata.create_all(bind=engine)
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+import psycopg2
+# Update connection string information
 
-Base = declarative_base()
+host = 'mtp-db.postgres.database.azure.com'
+dbname = "postgres"
+user = "mtp038"
+password = "qwertY1!"
+sslmode = "require"
+# Construct connection string
 
+conn_string = "host={0} user={1} dbname={2} password={3} sslmode={4}".format(host, user, dbname, password, sslmode)
+conn = psycopg2.connect(conn_string)
+print("Connection established")
+cursor = conn.cursor()
 
-class AsyncDatabaseSession:
-    def __init__(self):
-        self._session = None
-        self._engine = None
-
-    def __getattr__(self, name):
-        return getattr(self._session, name)
-
-    async def init(self):
-        self._engine = create_async_engine("postgresql+psycopg2://mtp038:qwertY1!@mtp-db.postgres.database.azure.com:5432/postgres",
-            echo=True,
-        )
-
-        self._session = sessionmaker(
-            self._engine, expire_on_commit=False, class_=AsyncSession
-        )()
-
-    async def create_all(self):
-        async with self._engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-
-async_db_session = AsyncDatabaseSession()
+# conn.commit()
+# cursor.close()
+# conn.close()
