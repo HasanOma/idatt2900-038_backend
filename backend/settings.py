@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-%118ha2wqtzk(b2@kch8t2m!3w_k^zsg8f0&5j)k9)(hwltzja'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['mtp038backend.azurewebsites.net', '127.0.0.1:8000', '127.0.0.1','localhost', 'localhost:8000', '']
 
@@ -97,15 +97,18 @@ CELERY_BROKER_URL = 'redis://localhost:6379'
 
 DATABASES = {
     "default": {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',
         'USER': 'mtp038',
         'PASSWORD': 'qwertY1!',
         'HOST': 'mtp-db.postgres.database.azure.com',
         'PORT': '5432',
+        'OPTIONS': {
+            'sslmode': 'require',
+            # 'async_mode': True,  # enable asyncio mode
+        }
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
