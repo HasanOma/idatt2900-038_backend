@@ -1,14 +1,14 @@
-# from sqlalchemy import Column, Integer, String, Float, text, update
-# from sqlalchemy.orm import Session
-# from django.db import models
-#
-# from sqlalchemy.ext.declarative import declarative_base
-# Base = declarative_base()
-# from backend.database import engine, SessionLocal
+from sqlalchemy.ext.declarative import declarative_base
+Base = declarative_base()
+from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import update
+from sqlalchemy.future import select
+from sqlalchemy.orm import relationship
+from django.db import models
+from sqlalchemy import update as sqlalchemy_update
 
 
-
-
+from backend.database import cursor, conn
 
 
 # class VesselBasic:
@@ -45,72 +45,10 @@ class Vessel:
             return self.mmsi == other.mmsi
         return False
 
-from sqlalchemy.ext.declarative import declarative_base
-Base = declarative_base()
-from sqlalchemy import Column, Integer, String, Float
-from sqlalchemy import update
-from sqlalchemy.future import select
-from sqlalchemy.orm import relationship
-from django.db import models
-from sqlalchemy import update as sqlalchemy_update
-
-# from backend.database import async_db_session
-#
-# class ModelAdmin:
-#     @classmethod
-#     async def create(cls, **kwargs):
-#         instance = cls(**kwargs)
-#         async_db_session.add(instance)
-#         await async_db_session.commit()
-#         return instance
-#
-#     @classmethod
-#     async def create_multi(cls, ships):
-#         async with async_db_session.begin():
-#             async_db_session.add_all(ships)
-#
-#     @classmethod
-#     async def update(cls, id, **kwargs):
-#         query = (
-#             sqlalchemy_update(cls)
-#             .where(cls.mmsi == id)
-#             .values(**kwargs)
-#             .execution_options(synchronize_session="fetch")
-#         )
-#         await async_db_session.execute(query)
-#         await async_db_session.commit()
-#
-#     @classmethod
-#     async def update_ship_fields(cls, mmsi, fields):
-#         update_query = update(cls).where(cls.mmsi == mmsi).values(fields)
-#         await async_db_session.execute(update_query)
-#         await async_db_session.commit()
-#         query = select(cls).where(cls.mmsi == mmsi)
-#         result = await async_db_session.execute(query)
-#         return result.scalar()
-#
-#     @classmethod
-#     async def get(cls, id):
-#         query = select(cls).where(cls.mmsi == id)
-#         result = await async_db_session.execute(query)
-#         res = result.scalar()
-#         result.close()
-#         return res
-#
-#     @classmethod
-#     async def get_by_mmsi(cls, id, name):
-#         query = select(cls).where(cls.mmsi == id and cls.name == name)
-#         results = await async_db_session.execute(query)
-#         (result,) = results.one()
-#         return result
-
-
-from backend.database import cursor, conn
-
 class ModelAdmin:
     @classmethod
     def create(cls, **kwargs):
-        print("creating ship ", kwargs)
+        # print("creating ship ", kwargs)
         query = f"INSERT INTO {cls.__tablename__} ({', '.join(kwargs.keys())}) VALUES ({', '.join(['%s'] * len(kwargs.values()))}) RETURNING *"
         cursor.execute(query, tuple(kwargs.values()))
         result = cursor.fetchone()
@@ -119,7 +57,7 @@ class ModelAdmin:
 
     @classmethod
     async def create_from_basic(cls, **kwargs):
-        print("creating ship from basic ", kwargs)
+        # print("creating ship from basic ", kwargs)
         fields = ", ".join(kwargs.keys())
         values = ", ".join([f"'{value}'" for value in kwargs.values()])
         query = f"INSERT INTO {cls.__tablename__} ({fields}) VALUES ({values}) RETURNING *"
@@ -144,7 +82,7 @@ class ModelAdmin:
         values = tuple([v if v is not None else '' for v in values])
         cursor.execute(query, values)
         result = cursor.fetchone()
-        print("update_ship_fields result:", result)
+        # print("update_ship_fields result:", result)
         conn.commit()
         return result
 
@@ -154,62 +92,12 @@ class ModelAdmin:
         query = f"SELECT * FROM {cls.__tablename__} WHERE mmsi = {id}"
         cursor.execute(query)
         result = cursor.fetchone()
-        print("query:", query)
-        print("result:", result)
+        # print("query:", query)
+        # print("result:", result)
         if result is None:
             return None
         return result
 
-# class ModelAdmin:
-#     @classmethod
-#     async def create(cls, **kwargs):
-#         print("creating ship ", kwargs)
-#         query = cls.__table__.insert().values(**kwargs)
-#         return await session.execute(query)
-#
-#     @classmethod
-#     async def create_multi(cls, ships):
-#         query = cls.__table__.insert().values(ships)
-#         return await session.execute(query)
-#
-#     @classmethod
-#     async def update(cls, id, **kwargs):
-#         query = (
-#             update(cls.__table__)
-#             .where(cls.mmsi == id)
-#             .values(**kwargs)
-#         )
-#         await session.execute(query)
-#
-#     @classmethod
-#     async def update_ship_fields(cls, mmsi, fields):
-#         query = (
-#             cls.__table__.update()
-#             .where(cls.mmsi == mmsi)
-#             .values(fields)
-#             .returning(text("*"))
-#         )
-#         result = await session.execute(query).one()
-#
-#         # update the instance in the session
-#         instance = cls(**result)
-#         for key, value in fields.items():
-#             setattr(instance, key, value)
-#         session2 = Session(bind=engine)
-#         session2.merge(instance)
-#         await session.commit()
-#
-#         return instance
-#
-#     @classmethod
-#     async def get(cls, id):
-#         query = session.query(cls).filter(cls.mmsi == id)
-#         return await query.one_or_none()
-#
-#     @classmethod
-#     async def get_by_mmsi(cls, id, name):
-#         query = session.query(cls).filter(cls.mmsi == id, cls.name == name)
-#         return await query.one_or_none()
 
 class Ship(Base, ModelAdmin):
     __tablename__ = 'ships'

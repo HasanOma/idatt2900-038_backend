@@ -7,7 +7,6 @@ from typing import Dict
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from MTP_038_backend import models
-# from backend.database import async_db_session
 from MTP_038_backend.models import Ship
 
 bearer = None
@@ -35,10 +34,6 @@ def set_coordinates(north, west, south, east):
         ]
     ]
     print("new filter_coordinates   ", filter_coordinates)
-
-# async def init_db():
-#     await async_db_session.init()
-#     await async_db_session.create_all()
 
 async def token():
     global bearer
@@ -72,7 +67,6 @@ async def main():
             api_response = await resp.json()
             bearer = api_response['access_token']
     asyncio.create_task(token())
-    # await init_db()
 
 async def filter_ships():
     global bearer
@@ -118,13 +112,13 @@ async def filter_ships():
                                 raise ValueError("JSON data is empty or invalid")
                             data_ = models.Vessel(data_return)
                             ship = Ship(**data_.__dict__)
-                            print("ship", ship)
+                            # print("ship", ship)
                             from_db = await Ship.get(ship.mmsi)
-                            print("from_db", from_db)
+                            # print("from_db", from_db)
                             if from_db is None:
-                                print("ship not in db, creating ship")
+                                # print("ship not in db, creating ship")
                                 await create_ship(ship)
-                                print("created ship", ship)
+                                # print("created ship", ship)
                             return data_.__dict__
                         except Exception as e:
                             print(f"Error processing JSON object: {obj}. Error: {e}")
@@ -136,7 +130,7 @@ async def create_ship(ship):
     return await Ship.create(**ship.to_dict())
 
 async def update_ship(ship):
-    print("updating ship ", ship.to_dict())
+    # print("updating ship ", ship.to_dict())
     return await Ship.update(ship.mmsi, mmsi=ship.mmsi,
                     name=ship.name,
                     msgtime=ship.msgtime,

@@ -168,7 +168,7 @@ async def create_or_update_ship_with_basic(ship):
                                  'destination', 'eta', 'shipLength', 'shipWidth'), db_ship))
         db_to_ship = Ship(**db_ship_dict)
         if db_ship_dict['latitude'] == ship['latitude'] and db_ship_dict['longitude'] == ship['longitude']:
-            print(f"Ship with mmsi: {ship['mmsi']} is already in database")
+            # print(f"Ship with mmsi: {ship['mmsi']} is already in database")
             return db_ship_dict
         else:
             if db_to_ship is not None:
@@ -180,13 +180,13 @@ async def create_or_update_ship_with_basic(ship):
                          'destination', 'eta', 'shipLength', 'shipWidth'), updated_ship))
                 return db_ship_dict
             else:
-                print(f"Creating new ship with mmsi: {ship['mmsi']}")
+                # print(f"Creating new ship with mmsi: {ship['mmsi']}")
                 created_ship = await Ship.create_from_basic(**fields_to_update)
                 db_ship_dict = dict(zip(('mmsi', 'name', 'msgtime', 'latitude', 'longitude', 'speedOverGround', 'shipType',
                                  'destination', 'eta', 'shipLength', 'shipWidth'), created_ship))
                 return db_ship_dict
     else:
-        print(f"Creating new ship with mmsi: {ship['mmsi']}")
+        # print(f"Creating new ship with mmsi: {ship['mmsi']}")
         created_ship = await Ship.create_from_basic(**fields_to_update)
         db_ship_dict = dict(zip(('mmsi', 'name', 'msgtime', 'latitude', 'longitude', 'speedOverGround', 'shipType',
                                  'destination', 'eta', 'shipLength', 'shipWidth'), created_ship))
