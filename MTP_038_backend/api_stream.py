@@ -10,6 +10,10 @@ from MTP_038_backend import models
 from backend.database import async_db_session
 from MTP_038_backend.models import Ship
 
+#TODO 1: Fixed location coordinates
+#     2: This file ran as soon as application is started!!!
+#     3: Bearer in db
+
 bearer = None
 filter_coordinates = [
     [
