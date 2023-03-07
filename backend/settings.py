@@ -32,8 +32,8 @@ ALLOWED_HOSTS = ['mtp038backend.azurewebsites.net', '127.0.0.1:8000', '127.0.0.1
 INSTALLED_APPS = [
     'daphne',
     'channels',
+    'channels_redis',
     'celery',
-    'redis',
     'rest_framework',
     'corsheaders',
     'django.contrib.admin',
@@ -90,8 +90,14 @@ CORS_ALLOW_CREDENTIALS = True
 
 # WSGI_APPLICATION = 'backend.wsgi.application'
 ASGI_APPLICATION = 'backend.asgi.application'
+# ASGI_APPLICATION = "MTP_038_backend.routing.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    }
+}
 
-CELERY_BROKER_URL = 'redis://localhost:6379'
+# CELERY_BROKER_URL = 'redis://localhost:6379'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
