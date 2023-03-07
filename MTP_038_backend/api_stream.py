@@ -119,6 +119,7 @@ async def filter_ships():
                             from_db = await Ship.get(ship.mmsi)
                             if from_db is None:
                                 await create_ship(ship)
+                            print("updated ship  ",data_.__dict__)
                             return data_.__dict__
                         except Exception as e:
                             print(f"Error processing JSON object: {from_db}. Error: {e}")
