@@ -16,17 +16,6 @@ import ast
 #     3: Bearer in db
 
 bearer = None
-# filter_coordinates = [
-#     [
-#         [9.704635339617539, 63.71636867949894],
-#         [9.713635278804048, 63.27997175643682],
-#         [11.420623744565347, 63.29076081515623],
-#         [11.897620521465939, 63.945256790972905],
-#         [11.453623521583495, 64.12388902116183],
-#         [10.097632684107396, 63.852867195619694],
-#         [9.704635339617539, 63.71636867949894]
-#     ]
-# ]
 
 def set_coordinates():
     # global filter_coordinates
@@ -121,7 +110,7 @@ async def filter_ships():
                             ship = Ship(**data.__dict__)
                             from_db = await Ship.get(ship.mmsi)
                             if from_db is None and ship not in ships:
-                                # print("appending ship", ship.to_dict())
+                                print("appending ship", ship.to_dict())
                                 ships.append(ship)
                             if i % 1000 == 0:
                                 await Ship.create_multi(ships)

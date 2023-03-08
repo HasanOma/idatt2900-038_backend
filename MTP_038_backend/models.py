@@ -7,22 +7,6 @@ from sqlalchemy import update as sqlalchemy_update
 
 from backend.database import Base, async_db_session, session
 
-
-# class VesselBasic:
-#     def __init__(self, data):
-#         self.latitude = data['latitude']
-#         self.longitude = data['longitude']
-#         self.mmsi = data['mmsi']
-#         self.timestamp = data['timestamp']
-#
-#     def to_dict(self):
-#         return {
-#             'latitude': self.latitude,
-#             'longitude': self.longitude,
-#             'mmsi': self.mmsi,
-#             'timestamp': self.timestamp,
-#         }
-
 class Vessel:
     def __init__(self, data):
         self.latitude = data['geometry']['coordinates'][0]
@@ -36,11 +20,6 @@ class Vessel:
         self.eta = data['properties']['eta']
         self.shipLength = data['properties']['shipLength']
         self.shipWidth = data['properties']['shipWidth']
-
-    def __eq__(self, other):
-        if isinstance(other, Vessel):
-            return self.mmsi == other.mmsi
-        return False
 
 class ModelAdmin:
     @classmethod
@@ -59,17 +38,6 @@ class ModelAdmin:
             await async_db_session.commit()
 
     @classmethod
-    async def update(cls, id, **kwargs):
-        async with async_db_session.begin():
-            query = (
-                sqlalchemy_update(cls)
-                .where(cls.mmsi == id)
-                .values(**kwargs)
-                .execution_options(synchronize_session="fetch")
-            )
-            await async_db_session.execute(query)
-
-    @classmethod
     async def update_ship_fields(cls, mmsi, fields):
         async with async_db_session.begin():
             update_query = update(cls).where(cls.mmsi == mmsi).values(fields)
@@ -86,13 +54,6 @@ class ModelAdmin:
             res = result.scalar()
             result.close()
             return res
-
-    @classmethod
-    async def get_by_mmsi(cls, id, name):
-        async with async_db_session.begin():
-            query = select(cls).where(cls.mmsi == id and cls.name == name)
-            (result,) = await async_db_session.execute(query).one()
-            return result
 
 class ship_basic(Base, ModelAdmin):
     __tablename__ = 'ship_timestamp'
@@ -159,10 +120,3 @@ class Weather:
     def __init__(self,weather_data):
         self.temperature = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["air_temperature"]
         self.wind_speed = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["wind_speed"]
-
-# class Coordinate(models.Model):
-#     north = models.DecimalField(max_digits=14, decimal_places=8, null=True)
-#     west = models.DecimalField(max_digits=14, decimal_places=8, null=True)
-#     south = models.DecimalField(max_digits=14, decimal_places=8, null=True)
-#     east = models.DecimalField(max_digits=14, decimal_places=8, null=True)
-
