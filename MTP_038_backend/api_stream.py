@@ -53,7 +53,7 @@ async def token():
     payload = "client_id=hasanro%40stud.ntnu.no%3AMarine%20Traffic%20Portal&scope=ais&client_secret=heihei999!!!&grant_type=client_credentials"
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     while True:
-        await schedule_token(method_post, headers, 3200, payload, url)
+        await schedule_token(method_post, headers, 1600, payload, url)
 
 async def schedule_token(method, headers, interval, payload, url):
     global bearer
