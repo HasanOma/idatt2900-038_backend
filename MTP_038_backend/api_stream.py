@@ -11,9 +11,7 @@ from MTP_038_backend.models import Ship
 from MTP_038_backend.models import Vessel
 import ast
 
-#TODO 1: Fixed location coordinates
-#     2: This file ran as soon as application is started!!!
-#     3: Bearer in db
+#TODO 1: Bearer in db
 
 bearer = None
 
