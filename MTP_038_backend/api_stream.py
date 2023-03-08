@@ -6,29 +6,34 @@ import json
 from typing import Dict
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from MTP_038_backend import models
 from backend.database import async_db_session
 from MTP_038_backend.models import Ship
+from MTP_038_backend.models import Vessel
+import ast
 
 #TODO 1: Fixed location coordinates
 #     2: This file ran as soon as application is started!!!
 #     3: Bearer in db
 
 bearer = None
-filter_coordinates = [
-    [
-        [9.704635339617539, 63.71636867949894],
-        [9.713635278804048, 63.27997175643682],
-        [11.420623744565347, 63.29076081515623],
-        [11.897620521465939, 63.945256790972905],
-        [11.453623521583495, 64.12388902116183],
-        [10.097632684107396, 63.852867195619694],
-        [9.704635339617539, 63.71636867949894]
-    ]
-]
+# filter_coordinates = [
+#     [
+#         [9.704635339617539, 63.71636867949894],
+#         [9.713635278804048, 63.27997175643682],
+#         [11.420623744565347, 63.29076081515623],
+#         [11.897620521465939, 63.945256790972905],
+#         [11.453623521583495, 64.12388902116183],
+#         [10.097632684107396, 63.852867195619694],
+#         [9.704635339617539, 63.71636867949894]
+#     ]
+# ]
 
-def set_coordinates(north, west, south, east):
-    global filter_coordinates
+def set_coordinates():
+    # global filter_coordinates
+    north = 64.299370
+    west = 7.706847
+    south = 63.210836
+    east = 11.561208
     filter_coordinates = [
         [
             [west, north],
@@ -38,11 +43,8 @@ def set_coordinates(north, west, south, east):
             [west, north],
         ]
     ]
+    return filter_coordinates
     print("new filter_coordinates   ", filter_coordinates)
-
-# async def init_db():
-#     await async_db_session.init()
-#     await async_db_session.create_all()
 
 async def token():
     global bearer
@@ -80,7 +82,7 @@ async def main():
 
 async def filter_ships():
     global bearer
-    global filter_coordinates
+    # global filter_coordinates
 
     url = "https://live.ais.barentswatch.no/v1/combined"
 
@@ -90,7 +92,7 @@ async def filter_ships():
         "modelFormat": "Geojson",
         "geometry": {
             "type": "Polygon",
-            "coordinates": filter_coordinates
+            "coordinates": set_coordinates()
         }
     }
 
@@ -102,58 +104,36 @@ async def filter_ships():
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload, headers=headers) as response:
-                if response.status != 200:
-                    raise Exception(f"Unexpected response status: {response.status}")
-                content_length = int(response.headers.get("Content-Length", 0))
-                chunk_size = max(content_length // 100, 4096)  # at least 2048 bytes
-                response_content = response.content
-                while True:
-                    chunk = await response_content.read(chunk_size)
-                    from_db = None
-                    if not chunk:
-                        break
-                    json_objects = chunk.decode("utf-8").split("\n")
-                    for obj in json_objects:
-                        if not obj:
-                            continue
+                ships = []
+                i = 0
+                headers_dict = dict(response.headers)
+                async for line in response.content:
+                    i += 1
+                    event = line.decode('utf-8').strip()
+                    # print("event ", event)
+                    fields = event.splitlines()
+                    if fields:
+                        # print("fields ", fields)
                         try:
-                            data_return = json.loads(obj)
-                            data_ = models.Vessel(data_return)
-                            ship = Ship(**data_.__dict__)
+                            data_dict = json.loads(fields[0])
+                            data = Vessel(data_dict)
+                            # print("data_   ", data.__dict__)
+                            ship = Ship(**data.__dict__)
                             from_db = await Ship.get(ship.mmsi)
-                            if from_db is None:
-                                await create_ship(ship)
-                            print("updated ship  ",data_.__dict__)
-                            return data_.__dict__
+                            if from_db is None and ship not in ships:
+                                # print("appending ship", ship.to_dict())
+                                ships.append(ship)
+                            if i % 1000 == 0:
+                                await Ship.create_multi(ships)
+                                ships = []
+                                i = 0
+                                await asyncio.sleep(5)
                         except Exception as e:
-                            print(f"Error processing JSON object: {from_db}. Error: {e}")
+                            print(f"Error processing JSON object: {data}. Error: {e}")
     except Exception as e:
         print(f"Error fetching data from {url}. Error: {e}")
 
-async def create_ship(ship):
-    print("creating ship ", ship.to_dict())
-    return await Ship.create(mmsi=ship.mmsi,
-                    name=ship.name,
-                    msgtime=ship.msgtime,
-                    latitude=ship.latitude,
-                    longitude=ship.longitude,
-                    speedOverGround=ship.speedOverGround,
-                    shipType=ship.shipType,
-                    destination=ship.destination,
-                    eta=ship.eta,
-                    shipLength=ship.shipLength,
-                    shipWidth=ship.shipWidth)
-
-async def update_ship(ship):
-    print("updating ship ", ship.to_dict())
-    return await Ship.update(ship.mmsi, mmsi=ship.mmsi,
-                    name=ship.name,
-                    msgtime=ship.msgtime,
-                    latitude=ship.latitude,
-                    longitude=ship.longitude,
-                    speedOverGround=ship.speedOverGround,
-                    shipType=ship.shipType,
-                    destination=ship.destination,
-                    eta=ship.eta,
-                    shipLength=ship.shipLength,
-                    shipWidth=ship.shipWidth)
+if __name__ == "__main__":
+    asyncio.run(main())
+    while True:
+        asyncio.run(filter_ships())

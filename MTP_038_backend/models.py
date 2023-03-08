@@ -52,8 +52,11 @@ class ModelAdmin:
 
     @classmethod
     async def create_multi(cls, ships):
+        # print("creating ships ", ships)
         async with async_db_session.begin():
-            async_db_session.add_all(ships)
+            for ship in ships:
+                await async_db_session.merge(ship)
+            await async_db_session.commit()
 
     @classmethod
     async def update(cls, id, **kwargs):
@@ -126,6 +129,11 @@ class Ship(Base, ModelAdmin):
 
     __mapper_args__ = {"eager_defaults": True}
 
+    def __eq__(self, other):
+        if isinstance(other, Ship):
+            return self.mmsi == other.mmsi
+        return False
+
     def to_dict(self):
         return {
         'latitude': self.latitude ,
@@ -152,9 +160,9 @@ class Weather:
         self.temperature = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["air_temperature"]
         self.wind_speed = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["wind_speed"]
 
-class Coordinate(models.Model):
-    north = models.DecimalField(max_digits=14, decimal_places=8)
-    west = models.DecimalField(max_digits=14, decimal_places=8)
-    south = models.DecimalField(max_digits=14, decimal_places=8)
-    east = models.DecimalField(max_digits=14, decimal_places=8)
+# class Coordinate(models.Model):
+#     north = models.DecimalField(max_digits=14, decimal_places=8, null=True)
+#     west = models.DecimalField(max_digits=14, decimal_places=8, null=True)
+#     south = models.DecimalField(max_digits=14, decimal_places=8, null=True)
+#     east = models.DecimalField(max_digits=14, decimal_places=8, null=True)
 
