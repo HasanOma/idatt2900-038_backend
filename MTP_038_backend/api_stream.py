@@ -6,7 +6,7 @@ import json
 from typing import Dict
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from backend.database import async_db_session
+# from backend.database import async_db_session
 from MTP_038_backend.models import Ship
 from MTP_038_backend.models import Vessel
 import ast

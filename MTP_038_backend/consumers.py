@@ -4,7 +4,7 @@ import json
 from MTP_038_backend import api_ship_requests
 from MTP_038_backend import api_weather
 from MTP_038_backend import api_stream
-from backend.database import session
+# from backend.database import session
 
 class Ship_locations(AsyncWebsocketConsumer):
     group_name = 'ship_locations_group'
