@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth.models import User, Group
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from MTP_038_backend.serializers import UserSerializer, GroupSerializer, CoordinateSerializer
+from MTP_038_backend.serializers import UserSerializer, GroupSerializer
 
 
 # background_task.apply_async()
@@ -35,21 +35,21 @@ class CoordinateView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def post(self, request, *args, **kwargs):
-        '''
-        Create the Todo with given todo data
-        '''
-        print(request.data)
-        data = {
-            'north': request.data.get('north'),
-            'west': request.data.get('west'),
-            'south': request.data.get('south'),
-            'east': request.data.get('east')
-        }
-        serializer = CoordinateSerializer(data=data)
-        print(data)
-        if serializer.is_valid():
-            api_ship_requests.set_coordinates(data['north'], data['west'], data['south'], data['east'])
-            api_stream.set_coordinates(data['north'], data['west'], data['south'], data['east'])
-            return Response(data, status=status.HTTP_201_CREATED)
+    #     '''
+    #     Create the Todo with given todo data
+    #     '''
+    #     print(request.data)
+    #     data = {
+    #         'north': request.data.get('north'),
+    #         'west': request.data.get('west'),
+    #         'south': request.data.get('south'),
+    #         'east': request.data.get('east')
+    #     }
+    #     serializer = CoordinateSerializer(data=data)
+    #     print(data)
+    #     if serializer.is_valid():
+    #         api_ship_requests.set_coordinates(data['north'], data['west'], data['south'], data['east'])
+    #         api_stream.set_coordinates(data['north'], data['west'], data['south'], data['east'])
+    #         return Response(data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
