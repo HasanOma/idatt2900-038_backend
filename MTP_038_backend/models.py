@@ -31,10 +31,17 @@ class ModelAdmin:
 
     @classmethod
     async def create_multi(cls, ships):
-        # print("creating ships ", ships)
+        print("creating ships ", ships)
         async with async_db_session.begin():
             for ship in ships:
                 await async_db_session.merge(ship)
+            await async_db_session.commit()
+
+    @classmethod
+    async def merge_token(cls, entity):
+        # print("merging ships ", ships)
+        async with async_db_session.begin():
+            await async_db_session.merge(entity)
             await async_db_session.commit()
 
     @classmethod
@@ -50,6 +57,15 @@ class ModelAdmin:
     async def get(cls, id):
         async with async_db_session.begin():
             query = select(cls).where(cls.mmsi == id)
+            result = await async_db_session.execute(query)
+            res = result.scalar()
+            result.close()
+            return res
+
+    @classmethod
+    async def get_token(cls, id):
+        async with async_db_session.begin():
+            query = select(cls).where(cls.id == id)
             result = await async_db_session.execute(query)
             res = result.scalar()
             result.close()
@@ -110,11 +126,16 @@ class Ship(Base, ModelAdmin):
         'shipWidth': self.shipWidth
         }
 
-class token(Base, ModelAdmin):
+class Token(Base, ModelAdmin):
     __tablename__ = 'api_token'
     id = Column(Integer, primary_key=True)
     bearer = Column(String(255), nullable=True)
     __mapper_args__ = {"eager_defaults": True}
+
+    def to_dict(self):
+        return {
+        'bearer': self.bearer ,
+        }
 
 class Weather:
     def __init__(self,weather_data):
