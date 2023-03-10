@@ -43,6 +43,13 @@ class ModelAdmin:
             await async_db_session.commit()
 
     @classmethod
+    async def merge_token(cls, entity):
+        # print("merging ships ", ships)
+        async with async_db_session.begin():
+            await async_db_session.merge(entity)
+            await async_db_session.commit()
+
+    @classmethod
     async def create_from_basic(cls, **kwargs):
         # print("creating ship from basic ", kwargs)
         fields = ", ".join(kwargs.keys())
@@ -85,6 +92,35 @@ class ModelAdmin:
             return None
         return result
 
+    @classmethod
+    async def get_token(cls, id):
+        print("getting ship ", id)
+        query = f"SELECT * FROM {cls.__tablename__} WHERE id = {id}"
+        cursor.execute(query)
+        result = cursor.fetchone()
+        # print("query:", query)
+        # print("result:", result)
+        if result is None:
+            return None
+        return result
+
+    class ship_basic(Base, ModelAdmin):
+        __tablename__ = 'ship_timestamp'
+
+    mmsi = Column(Integer, primary_key=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    timestamp = Column(String, nullable=True)
+
+    __mapper_args__ = {"eager_defaults": True}
+
+    def to_dict(self):
+        return {
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'mmsi': self.mmsi,
+            'timestamp': self.timestamp,
+        }
 
 class Ship(Base, ModelAdmin):
     __tablename__ = 'ships'
@@ -123,29 +159,16 @@ class Ship(Base, ModelAdmin):
         'shipWidth': self.shipWidth
         }
 
-class ship_basic(Base, ModelAdmin):
-    __tablename__ = 'ship_timestamp'
-
-    mmsi = Column(Integer, primary_key=True)
-    latitude = Column(Float, nullable=True)
-    longitude = Column(Float, nullable=True)
-    timestamp = Column(String, nullable=True)
-
-    __mapper_args__ = {"eager_defaults": True}
-
-    def to_dict(self):
-        return {
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'mmsi': self.mmsi,
-            'timestamp': self.timestamp,
-        }
-
-class token(Base, ModelAdmin):
+class Token(Base, ModelAdmin):
     __tablename__ = 'api_token'
     id = Column(Integer, primary_key=True)
     bearer = Column(String(255), nullable=True)
     __mapper_args__ = {"eager_defaults": True}
+
+    def to_dict(self):
+        return {
+        'bearer': self.bearer ,
+        }
 
 class Weather:
     def __init__(self,weather_data):

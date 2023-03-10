@@ -31,12 +31,11 @@ class MyThread(threading.Thread):
         self.stop_event = stop_event
 
     def run(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
 
         try:
-            while not self.stop_event.is_set():
-                subprocess.run([sys.executable, 'MTP_038_backend/api_stream.py'], check=True)
+            print("Starting script...")
+            # Start the api_stream.py script
+            subprocess.run([sys.executable, 'MTP_038_backend/api_stream.py'], check=True)
         except subprocess.CalledProcessError as e:
             print(f"Script finished with error: {e}")
 
