@@ -8,9 +8,11 @@ from typing import Dict
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from MTP_038_backend import models
+from collections import namedtuple
 # from backend.database import async_db_session
 from MTP_038_backend.models import Ship
 from MTP_038_backend.models import Token
+from MTP_038_backend.models import tuple_to_ship
 import os
 # from MTP_038_backend.models import ship_basic
 # from celery import shared_task
@@ -60,7 +62,9 @@ async def schedule_token():
                 print(api_response)
                 bearer = api_response['access_token']
     else:
-        bearer = token_from_db.bearer
+        bearer = token_from_db[1]
+        # print("token from db ", token_from_db)
+        # print("token from db ** ", **token_from_db)
 
 async def main():
     set_coordinates()
@@ -78,24 +82,22 @@ async def all_ships():
             results = await schedule_all_ships(method, headers, payload, url, session, list_of_ships)
             return results
 
-async def schedule_all_ships(method, headers, payload, url, session, boundary_coordinates):
+async def schedule_all_ships(method, headers, payload, url, session, results):
+    Skip = namedtuple('tuple_to_ship',{'mmsi', 'name', 'msgtime', 'latitude', 'longitude', 'speedOverGround', 'shipType', 'destination', 'eta', 'shipLength', 'shipWidth'})
     try:
         async with session.request(method, url, data=payload, headers=headers) as resp:
             api_response = await resp.json()
-            tasks = []
             for ship in api_response:
                 latitude = ship['latitude']
                 longitude = ship['longitude']
                 if check_specific_coordinates(latitude, longitude):
                     new_ship = await create_or_update_ship_with_basic(ship)
-                    tasks.append(new_ship)
-            results = tasks
+                    results.append(dict(zip(Skip._fields, new_ship)))
             print(f"Number of ships: {len(results)}")
             return results
     except Exception as e:
         print(f"Error during API request: {e}")
         return
-
 
 async def create_or_update_ship_with_basic(ship):
     fields_to_update = {
@@ -110,23 +112,28 @@ async def create_or_update_ship_with_basic(ship):
                     latitude=ship['latitude'],
                     longitude=ship['longitude'],
                     speedOverGround=ship['speedOverGround'],
-                    shipType=ship['shipType'])
-    db_ship = await Ship.get(ship['mmsi'])
+                    shipType=ship['shipType'],
+                    destination= None,
+                    eta = None,
+                    shipLength = None,
+                    shipWidth = None,
+    )
+    if new_ship.speedOverGround is None:
+        new_ship.speedOverGround = 0
+    if fields_to_update['speedOverGround'] is None:
+        fields_to_update['speedOverGround'] = 0
+    db_ship = await Ship.get_basic(new_ship.mmsi)
     if db_ship is not None:
-        if db_ship.latitude == ship['latitude'] and db_ship.longitude == ship['longitude']:
-            return db_ship.to_dict()
+        print("db_ship ", db_ship)
+        if round(db_ship[3], 3) == round(new_ship.latitude, 3) and round(db_ship[4], 3) == round(
+                new_ship.longitude, 3):
+            print("ship is the same", db_ship)
+            return db_ship
         else:
-            if db_ship is not None:
-                await db_ship.update_ship_fields(mmsi=ship['mmsi'], fields=fields_to_update)
-                updated_ship = await Ship.get(ship['mmsi'])
-                return updated_ship.to_dict()
-            else:
-                new_ship_dict = new_ship.__dict__
-                new_ship_dict.pop('_sa_instance_state', None)
-                created_ship = await Ship.create(mmsi=ship['mmsi'], name=ship['name'], **fields_to_update)
-                return created_ship.to_dict()
+            print("updating ship", new_ship.__dict__)
+            return await Ship.update_ship_fields(mmsi=new_ship.mmsi, fields=fields_to_update)
     else:
-        new_ship_dict = new_ship.__dict__
-        new_ship_dict.pop('_sa_instance_state', None)
-        created_ship = await Ship.create(mmsi=ship['mmsi'], name=ship['name'], **fields_to_update)
-        return created_ship.to_dict()
+        print("creating ship", new_ship.__dict__)
+        new_ship = new_ship.__dict__
+        new_ship.pop('_sa_instance_state', None)
+        return await Ship.create(new_ship)

@@ -24,77 +24,88 @@ class Vessel:
         self.shipLength = data['properties']['shipLength']
         self.shipWidth = data['properties']['shipWidth']
 
+
+class tuple_to_ship:
+    def __init__(self, mmsi, name, msgtime, latitude, longitude, speedOverGround, shipType, destination, eta, shipLength, shipWidth):
+        self.latitude = latitude
+        self.longitude = longitude
+        self.mmsi = mmsi
+        self.name = name
+        self.msgtime = msgtime
+        self.speedOverGround = speedOverGround
+        self.shipType = shipType
+        self.destination = destination
+        self.eta = eta
+        self.shipLength = shipLength
+        self.shipWidth = shipWidth
+
 class ModelAdmin:
     @classmethod
-    def create(cls, **kwargs):
-        # print("creating ship ", kwargs)
-        query = f"INSERT INTO {cls.__tablename__} ({', '.join(kwargs.keys())}) VALUES ({', '.join(['%s'] * len(kwargs.values()))}) RETURNING *"
+    async def create(cls, kwargs):
+        if not isinstance(kwargs, dict):
+            raise ValueError("Invalid argument: expected a dictionary")
+        query = f"INSERT INTO {cls.__tablename__} ({', '.join(kwargs.keys())}) VALUES ({', '.join(['%s'] * len(kwargs.values()))})" \
+                f"ON CONFLICT (mmsi) DO UPDATE SET " \
+                f"{', '.join([f'{key}=EXCLUDED.{key}' for key in kwargs.keys() if key != 'mmsi'])} RETURNING *"
+        cursor.execute(query, tuple(kwargs.values()))
+        result = cursor.fetchone()
+        conn.commit()
+        print("created ", result)
+        return result
+
+    @classmethod
+    async def create_multi(cls, entities):
+        for entity in entities:
+            await cls.create(entity)
+
+    @classmethod
+    async def merge_token(cls, **kwargs):
+        query = f"INSERT INTO {cls.__tablename__} ({', '.join(kwargs.keys())}) VALUES " \
+                f"({', '.join(['%s'] * len(kwargs.values()))}) ON CONFLICT (id) DO UPDATE SET " \
+                f"{', '.join([f'{key}=EXCLUDED.{key}' for key in kwargs.keys() if key != 'id'])} RETURNING *"
         cursor.execute(query, tuple(kwargs.values()))
         result = cursor.fetchone()
         conn.commit()
         return result
 
     @classmethod
-    async def create_multi(cls, ships):
-        # print("creating ships ", ships)
-        async with async_db_session.begin():
-            for ship in ships:
-                await async_db_session.merge(ship)
-            await async_db_session.commit()
-
-    @classmethod
-    async def merge_token(cls, entity):
-        # print("merging ships ", ships)
-        async with async_db_session.begin():
-            await async_db_session.merge(entity)
-            await async_db_session.commit()
-
-    @classmethod
-    async def create_from_basic(cls, **kwargs):
-        # print("creating ship from basic ", kwargs)
-        fields = ", ".join(kwargs.keys())
-        values = ", ".join([f"'{value}'" for value in kwargs.values()])
-        query = f"INSERT INTO {cls.__tablename__} ({fields}) VALUES ({values}) RETURNING *"
-        cursor.execute(query)
-        result = cursor.fetchone()
-        conn.commit()
-        return result
-
-    @classmethod
-    def update(cls, id, **kwargs):
-        set_fields = ", ".join([f"{key}='{value}'" for key, value in kwargs.items()])
-        query = f"UPDATE {cls.__tablename__} SET {set_fields} WHERE mmsi = {id} RETURNING *"
-        cursor.execute(query)
-        result = cursor.fetchone()
-        conn.commit()
-        return result
-
-    @classmethod
-    def update_ship_fields(cls, **fields):
-        query = f"UPDATE {cls.__tablename__} SET {', '.join(f'{k} = %s' for k in fields.keys())} WHERE mmsi = %s RETURNING *"
-        values = tuple(fields.values()) + (fields['mmsi'],)
+    async def update_ship_fields(cls, mmsi, fields):
+        query = f"""
+        UPDATE {cls.__tablename__}
+        SET {', '.join(f'{k} = %s' for k in fields.keys())}
+        WHERE mmsi = %s
+        RETURNING *
+      """
+        values = tuple(fields.values()) + (mmsi,)
         values = tuple([v if v is not None else '' for v in values])
         cursor.execute(query, values)
         result = cursor.fetchone()
-        # print("update_ship_fields result:", result)
         conn.commit()
         return result
 
     @classmethod
     async def get(cls, id):
-        print("getting ship ", id)
         query = f"SELECT * FROM {cls.__tablename__} WHERE mmsi = {id}"
         cursor.execute(query)
         result = cursor.fetchone()
-        # print("query:", query)
-        # print("result:", result)
+        # print("result:", dict(result))
+        if result is None:
+            return None
+        return result
+
+    @classmethod
+    async def get_basic(cls, id):
+        query = f"SELECT * FROM {cls.__tablename__} WHERE mmsi = {id}"
+        cursor.execute(query)
+        result = cursor.fetchone()
+        # print("result:", dict(result))
         if result is None:
             return None
         return result
 
     @classmethod
     async def get_token(cls, id):
-        print("getting ship ", id)
+        # print("getting ship ", id)
         query = f"SELECT * FROM {cls.__tablename__} WHERE id = {id}"
         cursor.execute(query)
         result = cursor.fetchone()
@@ -104,8 +115,8 @@ class ModelAdmin:
             return None
         return result
 
-    class ship_basic(Base, ModelAdmin):
-        __tablename__ = 'ship_timestamp'
+class ship_basic(Base, ModelAdmin):
+    __tablename__ = 'ship_timestamp'
 
     mmsi = Column(Integer, primary_key=True)
     latitude = Column(Float, nullable=True)
@@ -167,6 +178,7 @@ class Token(Base, ModelAdmin):
 
     def to_dict(self):
         return {
+            'id': self.id,
         'bearer': self.bearer ,
         }
 

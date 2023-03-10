@@ -56,7 +56,7 @@ async def schedule_token(method, headers, interval, payload, url):
             # print(api_response)
             bearer = api_response['access_token']
             token_to_db = Token(id=1, bearer=bearer)
-            await Token.merge_token(token_to_db)
+            await Token.merge_token(id=1, bearer=bearer)
             # roken = await Token.get_token(1)
             # print("bearer from db ", roken.bearer)
     await asyncio.sleep(interval)
@@ -76,7 +76,7 @@ async def main():
             api_response = await resp.json()
             bearer = api_response['access_token']
             token_to_db = Token(id=1, bearer=bearer)
-            await Token.merge_token(token_to_db)
+            await Token.merge_token(id=1, bearer=bearer)
             # roken = await Token.get_token(1)
             # print("bearer from db 1 ", roken.bearer)
 
@@ -101,7 +101,7 @@ async def filter_ships():
         "Authorization": "Bearer " + bearer
     }
     now = datetime.now()
-    start = now - timedelta(minutes=30)
+    start = now - timedelta(minutes=1)
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload, headers=headers) as response:
@@ -119,11 +119,12 @@ async def filter_ships():
                             data = Vessel(data_dict)
                             ship = Ship(**data.__dict__)
                             from_db = await Ship.get(ship.mmsi)
-                            if from_db is None and ship not in ships:
-                                print("appending ship", ship.to_dict())
+                            if from_db is None:
+                                # print("appending ship", ship.to_dict())
                                 ships.append(ship)
                             if i % 200 == 0:
-                                await Ship.create_multi(ships)
+                                entities = [ship.to_dict() for ship in ships]
+                                await Ship.create_multi(entities)
                                 ships = []
                             if i % 1050 == 0:
                                 i = 0
