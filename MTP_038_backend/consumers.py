@@ -60,23 +60,6 @@ class Ship_locations(AsyncWebsocketConsumer):
                 print("Stopped sending ship locations")
                 break
 
-
-
-class Filtered_Ships(AsyncWebsocketConsumer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.is_running = False
-
-    async def connect(self):
-        await self.accept()
-        await api_stream.main()
-        self.is_running = True
-        while self.is_running:
-            await api_stream.filter_ships()
-
-    async def disconnect(self, close_code):
-        self.is_running = False
-
 class Weather_data(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

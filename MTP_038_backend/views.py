@@ -11,9 +11,6 @@ from django.contrib.auth.models import User, Group
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from MTP_038_backend.serializers import UserSerializer, GroupSerializer
 
-
-# background_task.apply_async()
-
 class UserViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
