@@ -100,6 +100,7 @@ async def schedule_all_ships(method, headers, payload, url, session, results):
         return
 
 async def create_or_update_ship_with_basic(ship):
+    print("ship ", ship)
     fields_to_update = {
         "msgtime": ship['msgtime'],
         "latitude": ship['latitude'],
@@ -124,16 +125,16 @@ async def create_or_update_ship_with_basic(ship):
         fields_to_update['speedOverGround'] = 0
     db_ship = await Ship.get_basic(new_ship.mmsi)
     if db_ship is not None:
-        print("db_ship ", db_ship)
+        # print("db_ship ", db_ship)
         if round(db_ship[3], 3) == round(new_ship.latitude, 3) and round(db_ship[4], 3) == round(
                 new_ship.longitude, 3):
-            print("ship is the same", db_ship)
+            # print("ship is the same", db_ship)
             return db_ship
         else:
-            print("updating ship", new_ship.__dict__)
+            # print("updating ship", new_ship.__dict__)
             return await Ship.update_ship_fields(mmsi=new_ship.mmsi, fields=fields_to_update)
     else:
-        print("creating ship", new_ship.__dict__)
+        # print("creating ship", new_ship.__dict__)
         new_ship = new_ship.__dict__
         new_ship.pop('_sa_instance_state', None)
         return await Ship.create(new_ship)

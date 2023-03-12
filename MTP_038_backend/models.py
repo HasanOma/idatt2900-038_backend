@@ -70,6 +70,7 @@ class ModelAdmin:
 
     @classmethod
     async def update_ship_fields(cls, mmsi, fields):
+        # print("updating ship ", mmsi, " with ", fields)
         query = f"""
         UPDATE {cls.__tablename__}
         SET {', '.join(f'{k} = %s' for k in fields.keys())}

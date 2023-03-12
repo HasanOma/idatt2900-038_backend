@@ -1,27 +1,37 @@
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.layers import get_channel_layer
 import json
 from datetime import datetime, timedelta
 from MTP_038_backend import api_ship_requests
 from MTP_038_backend import api_weather
 from MTP_038_backend import api_stream
-# from backend.database import session
+import redis
 
 class Ship_locations(AsyncWebsocketConsumer):
     group_name = 'ship_locations_group'
+    client = redis.Redis()
+    client.set(group_name, 0)
+
+    def get_group_size(self):
+        val = self.client.get(self.group_name)
+        print(val)
+        return int(val)
 
     async def connect(self):
         await self.accept()
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         self.is_running = True
         await self.send_current_location()
-        if len(self.channel_layer.groups[self.group_name]) == 1:
+        self.client.set(self.group_name, self.get_group_size() + 1)
+        if self.get_group_size() == 1:
             asyncio.create_task(self.send_ship_locations())
 
     async def disconnect(self, close_code):
         try:
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
-            if len(self.channel_layer.groups.get(self.group_name, [])) == 0:
+            self.client.set(self.group_name, self.get_group_size() - 1)
+            if self.get_group_size() == 0:
                 self.is_running = False
         except KeyError:
             pass
@@ -56,7 +66,7 @@ class Ship_locations(AsyncWebsocketConsumer):
                 await api_ship_requests.schedule_token()
                 start = datetime.now()
                 print(f"Elapsed time before resetting token: {elapsed_time}  minutes")
-            if self.is_running is False:
+            if not self.is_running:
                 print("Stopped sending ship locations")
                 break
 
