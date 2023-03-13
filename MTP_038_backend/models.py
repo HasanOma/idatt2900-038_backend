@@ -27,11 +27,11 @@ class Vessel:
 
 class tuple_to_ship:
     def __init__(self, mmsi, name, msgtime, latitude, longitude, speedOverGround, shipType, destination, eta, shipLength, shipWidth):
-        self.latitude = latitude
-        self.longitude = longitude
         self.mmsi = mmsi
         self.name = name
         self.msgtime = msgtime
+        self.latitude = latitude
+        self.longitude = longitude
         self.speedOverGround = speedOverGround
         self.shipType = shipType
         self.destination = destination
