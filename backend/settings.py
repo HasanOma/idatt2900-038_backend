@@ -87,8 +87,8 @@ REST_FRAMEWORK = {
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
-
-WSGI_APPLICATION = 'backend.wsgi.application'
+WEBSITES_PORT = 8000
+# WSGI_APPLICATION = 'backend.wsgi.application'
 ASGI_APPLICATION = 'backend.asgi.application'
 # ASGI_APPLICATION = "MTP_038_backend.routing.application"
 CHANNEL_LAYERS = {
