@@ -34,7 +34,6 @@ INSTALLED_APPS = [
     'daphne',
     'channels',
     'channels_redis',
-    'celery',
     'rest_framework',
     'corsheaders',
     'django.contrib.admin',
