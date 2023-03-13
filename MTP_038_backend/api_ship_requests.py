@@ -83,7 +83,9 @@ async def all_ships():
             return results
 
 async def schedule_all_ships(method, headers, payload, url, session, results):
-    Skip = namedtuple('tuple_to_ship',{'mmsi', 'name', 'msgtime', 'latitude', 'longitude', 'speedOverGround', 'shipType', 'destination', 'eta', 'shipLength', 'shipWidth'})
+    Skip = namedtuple('Skip',
+                      ['mmsi', 'name', 'msgtime', 'latitude', 'longitude', 'speedOverGround', 'shipType', 'destination',
+                       'eta', 'shipLength', 'shipWidth'])
     try:
         async with session.request(method, url, data=payload, headers=headers) as resp:
             api_response = await resp.json()
@@ -92,6 +94,7 @@ async def schedule_all_ships(method, headers, payload, url, session, results):
                 longitude = ship['longitude']
                 if check_specific_coordinates(latitude, longitude):
                     new_ship = await create_or_update_ship_with_basic(ship)
+                    # print("new_ship ", new_ship)
                     results.append(dict(zip(Skip._fields, new_ship)))
             print(f"Number of ships: {len(results)}")
             return results
@@ -100,7 +103,7 @@ async def schedule_all_ships(method, headers, payload, url, session, results):
         return
 
 async def create_or_update_ship_with_basic(ship):
-    print("ship ", ship)
+    # print("ship ", ship)
     fields_to_update = {
         "msgtime": ship['msgtime'],
         "latitude": ship['latitude'],
