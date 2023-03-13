@@ -25,6 +25,7 @@ coordinates = {
 "east": 1.0
 }
 
+
 def set_coordinates():
     global coordinates
     north = 64.299370
@@ -35,6 +36,7 @@ def set_coordinates():
     coordinates['west'] =  west
     coordinates['south'] = south
     coordinates['east'] = east
+
 
 def check_specific_coordinates(latitude, longitude):
     global coordinates
@@ -47,6 +49,7 @@ def check_specific_coordinates(latitude, longitude):
     else:
         return False
 
+
 async def schedule_token():
     global bearer
     url = "https://id.barentswatch.no/connect/token"
@@ -57,7 +60,7 @@ async def schedule_token():
     token_from_db = await Token.get_token(1)
     if token_from_db is None:
         async with aiohttp.ClientSession() as session:
-            async with session.request(method, url, data=payload, headers=headers) as resp:
+            async with session.request(method_post, url, data=payload, headers=headers) as resp:
                 api_response = await resp.json()
                 print(api_response)
                 bearer = api_response['access_token']
@@ -66,9 +69,11 @@ async def schedule_token():
         # print("token from db ", token_from_db)
         # print("token from db ** ", **token_from_db)
 
+
 async def main():
     set_coordinates()
     await schedule_token()
+
 
 async def all_ships():
     global bearer
@@ -81,6 +86,7 @@ async def all_ships():
             list_of_ships = []
             results = await schedule_all_ships(method, headers, payload, url, session, list_of_ships)
             return results
+
 
 async def schedule_all_ships(method, headers, payload, url, session, results):
     Skip = namedtuple('Skip',
@@ -101,6 +107,7 @@ async def schedule_all_ships(method, headers, payload, url, session, results):
     except Exception as e:
         print(f"Error during API request: {e}")
         return
+
 
 async def create_or_update_ship_with_basic(ship):
     # print("ship ", ship)
