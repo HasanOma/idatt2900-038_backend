@@ -28,7 +28,7 @@ jobs:
           source venv/bin/activate
       
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install --no-cache-dir -r requirements.txt
         
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
       
@@ -61,3 +61,4 @@ jobs:
           app-name: 'mtp038backend'
           slot-name: 'production'
           publish-profile: ${{ secrets.AzureAppService_PublishProfile_dffa98614e4944e1b6bb088cbcbf4e96 }}
+          ports: '8000'
