@@ -98,7 +98,12 @@ CHANNEL_LAYERS = {
     # },
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": { "hosts": [("mtp-redis.redis.cache.windows.net", 6380, "WJzdULAO3jH6IXm3M3zmVOxh51QZm9rzvAzCaC8ZsCw==", True, False)], },
+        "CONFIG": { "hosts": [("mtp-redis.redis.cache.windows.net", 6380,
+                               )],
+                    "password": "WJzdULAO3jH6IXm3M3zmVOxh51QZm9rzvAzCaC8ZsCw==",
+                    "ssl": True,
+                    }
+                    # False)], },
         # "CONFIG": { "hosts": [("127.0.0.1", 6379)],},
     },
 }
