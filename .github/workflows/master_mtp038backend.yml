@@ -61,3 +61,4 @@ jobs:
           app-name: 'mtp038backend'
           slot-name: 'production'
           publish-profile: ${{ secrets.AzureAppService_PublishProfile_dffa98614e4944e1b6bb088cbcbf4e96 }}
+          ports: '8000'
