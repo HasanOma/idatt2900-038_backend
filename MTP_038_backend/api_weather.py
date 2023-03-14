@@ -1,10 +1,11 @@
 import asyncio
-import aiohttp
-import asgiref
-import requests
-import random
 import json
+import random
+
+import requests
+
 from MTP_038_backend import models
+
 
 async def weather_api():
 
@@ -49,5 +50,3 @@ async def weather_api():
     data_dict = vars(data)
 
     return data_dict
-
-asyncio.run(weather_api())

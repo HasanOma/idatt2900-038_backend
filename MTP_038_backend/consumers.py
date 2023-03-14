@@ -95,7 +95,7 @@ from datetime import datetime, timedelta
 from MTP_038_backend import api_ship_requests
 from MTP_038_backend import api_weather
 from MTP_038_backend import api_stream
-# from backend.database import session
+
 
 class Ship_locations(AsyncWebsocketConsumer):
     group_name = 'ship_locations_group'
@@ -151,22 +151,10 @@ class Ship_locations(AsyncWebsocketConsumer):
                 print("Stopped sending ship locations")
                 break
 
+    async def receive(self):
+        message = await self.channel_layer.receive()
+        return json.loads(message)
 
-
-class Filtered_Ships(AsyncWebsocketConsumer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.is_running = False
-
-    async def connect(self):
-        await self.accept()
-        await api_stream.main()
-        self.is_running = True
-        while self.is_running:
-            await api_stream.filter_ships()
-
-    async def disconnect(self, close_code):
-        self.is_running = False
 
 class Weather_data(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
