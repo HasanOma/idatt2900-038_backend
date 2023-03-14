@@ -28,7 +28,8 @@ jobs:
           source venv/bin/activate
 
       - name: Install dependencies
-        run: pip install --no-cache-dir -r requirements.txt
+        run: pip install -r requirements.txt
+
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       - name: Upload artifact for deployment jobs
@@ -38,12 +39,11 @@ jobs:
           path: |
             . 
             !venv/
-
   deploy:
     runs-on: ubuntu-latest
     needs: build
     environment:
-      name: 'production'
+      name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
@@ -58,6 +58,5 @@ jobs:
         id: deploy-to-webapp
         with:
           app-name: 'mtp038backend'
-          slot-name: 'production'
-          publish-profile: ${{ secrets.AzureAppService_PublishProfile_dffa98614e4944e1b6bb088cbcbf4e96 }}
-          ports: '8000'
+          slot-name: 'Production'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_0003189170994A3AAB9D238C6CE4610A }}
