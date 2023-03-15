@@ -1,21 +1,9 @@
-# from __future__ import absolute_import, unicode_literals
-import asyncio
-import aiohttp
-import requests
-import asgiref
-import json
-from typing import Dict
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
-from MTP_038_backend import models
 from collections import namedtuple
-# from backend.database import async_db_session
+
+import aiohttp
+
 from MTP_038_backend.models import Ship
 from MTP_038_backend.models import Token
-from MTP_038_backend.models import tuple_to_ship
-import os
-# from MTP_038_backend.models import ship_basic
-# from celery import shared_task
 
 bearer = None
 coordinates = {
@@ -64,8 +52,10 @@ async def schedule_token():
                 api_response = await resp.json()
                 print(api_response)
                 bearer = api_response['access_token']
+                return bearer
     else:
         bearer = token_from_db[1]
+        return bearer
         # print("token from db ", token_from_db)
         # print("token from db ** ", **token_from_db)
 

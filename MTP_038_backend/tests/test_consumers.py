@@ -83,3 +83,6 @@ class TestWeatherDataConsumer(asynctest.TestCase):
         received_message = await communicator.receive_json_from()
         self.assertIsInstance(received_message['weather']['temperature'], float)
         self.assertIsInstance(received_message['weather']['wind_speed'], float)
+
+if __name__ == '__main__':
+    asynctest.main()
