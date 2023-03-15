@@ -1,12 +1,12 @@
 import asyncio
-from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.layers import get_channel_layer
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
+
+import redis
+from channels.generic.websocket import AsyncWebsocketConsumer
+
 from MTP_038_backend import api_ship_requests
 from MTP_038_backend import api_weather
-from MTP_038_backend import api_stream
-import redis
 
 
 class Ship_locations(AsyncWebsocketConsumer):
