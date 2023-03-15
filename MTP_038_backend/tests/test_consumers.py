@@ -14,9 +14,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Import the consumers you want to test
 from MTP_038_backend.consumers import Ship_locations, Weather_data
 
+
 # Define the mock functions
 async def mocked_api_ship_requests_all_ships():
     return {'ship_data': 'test_ship_data'}
+
 
 async def mocked_api_weather_weather_api():
     return {'weather_data': 'test_weather_data'}
@@ -81,5 +83,3 @@ class TestWeatherDataConsumer(asynctest.TestCase):
         received_message = await communicator.receive_json_from()
         self.assertIsInstance(received_message['weather']['temperature'], float)
         self.assertIsInstance(received_message['weather']['wind_speed'], float)
-
-

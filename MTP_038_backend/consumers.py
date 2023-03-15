@@ -8,6 +8,7 @@ from MTP_038_backend import api_weather
 from MTP_038_backend import api_stream
 import redis
 
+
 class Ship_locations(AsyncWebsocketConsumer):
     group_name = 'ship_locations_group'
     client = redis.Redis()
