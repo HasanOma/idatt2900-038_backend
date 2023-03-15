@@ -85,27 +85,30 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_ALLOW_CREDENTIALS = True
-PORT = 8000
-WEBSITES_PORT = 8000
+# CORS_ORIGIN_ALLOW_ALL = True
+# CORS_ALLOW_CREDENTIALS = True
+# PORT = 8000
+# WEBSITES_PORT = 8000
 WSGI_APPLICATION = 'backend.wsgi.application'
 ASGI_APPLICATION = 'backend.asgi.application'
 # ASGI_APPLICATION = "MTP_038_backend.routing.application"
 CHANNEL_LAYERS = {
-    "default": {
-    "BACKEND": "channels.layers.InMemoryChannelLayer",
-    },
     # "default": {
-    #     "BACKEND": "channels_redis.core.RedisChannelLayer",
+    # "BACKEND": "channels.layers.InMemoryChannelLayer",
+    # },
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
     #     "CONFIG": { "hosts": [("mtp-redis.redis.cache.windows.net", 6380,
     #                            )],
     #                 "password": "WJzdULAO3jH6IXm3M3zmVOxh51QZm9rzvAzCaC8ZsCw==",
     #                 "ssl": True,
     #                 }
     #                 # False)], },
-    #     # "CONFIG": { "hosts": [("127.0.0.1", 6379)],},
-    # },
+
+    },
 }
 
 # CELERY_BROKER_URL = 'redis://localhost:6379'

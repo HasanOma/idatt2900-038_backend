@@ -85,7 +85,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-
+WSGI_APPLICATION = 'backend.wsgi.application'
 ASGI_APPLICATION = 'backend.asgi.application'
 # ASGI_APPLICATION = "MTP_038_backend.routing.application"
 CHANNEL_LAYERS = {
