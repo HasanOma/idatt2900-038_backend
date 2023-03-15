@@ -1,14 +1,10 @@
 from sqlalchemy.ext.declarative import declarative_base
+
 Base = declarative_base()
 from sqlalchemy import Column, Integer, String, Float
-from sqlalchemy import update
-from sqlalchemy.future import select
-from sqlalchemy.orm import relationship
-from django.db import models
-from sqlalchemy import update as sqlalchemy_update
-
 
 from backend.database import cursor, conn
+
 
 class Vessel:
     def __init__(self, data):
@@ -26,7 +22,8 @@ class Vessel:
 
 
 class tuple_to_ship:
-    def __init__(self, mmsi, name, msgtime, latitude, longitude, speedOverGround, shipType, destination, eta, shipLength, shipWidth):
+    def __init__(self, mmsi, name, msgtime, latitude, longitude, speedOverGround, shipType, destination, eta,
+                 shipLength, shipWidth):
         self.mmsi = mmsi
         self.name = name
         self.msgtime = msgtime
@@ -38,6 +35,7 @@ class tuple_to_ship:
         self.eta = eta
         self.shipLength = shipLength
         self.shipWidth = shipWidth
+
 
 class ModelAdmin:
     @classmethod
@@ -116,6 +114,7 @@ class ModelAdmin:
             return None
         return result
 
+
 class ship_basic(Base, ModelAdmin):
     __tablename__ = 'ship_timestamp'
 
@@ -133,6 +132,7 @@ class ship_basic(Base, ModelAdmin):
             'mmsi': self.mmsi,
             'timestamp': self.timestamp,
         }
+
 
 class Ship(Base, ModelAdmin):
     __tablename__ = 'ships'
@@ -158,18 +158,19 @@ class Ship(Base, ModelAdmin):
 
     def to_dict(self):
         return {
-        'latitude': self.latitude ,
-        'longitude': self.longitude ,
-        'mmsi': self.mmsi ,
-        'name': self.name ,
-        'msgtime': self.msgtime ,
-        'speedOverGround': self.speedOverGround ,
-        'destination': self.destination ,
-        'eta': self.eta ,
-        'shipType': self.shipType ,
-        'shipLength': self.shipLength ,
-        'shipWidth': self.shipWidth
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'mmsi': self.mmsi,
+            'name': self.name,
+            'msgtime': self.msgtime,
+            'speedOverGround': self.speedOverGround,
+            'destination': self.destination,
+            'eta': self.eta,
+            'shipType': self.shipType,
+            'shipLength': self.shipLength,
+            'shipWidth': self.shipWidth
         }
+
 
 class Token(Base, ModelAdmin):
     __tablename__ = 'api_token'
@@ -180,10 +181,11 @@ class Token(Base, ModelAdmin):
     def to_dict(self):
         return {
             'id': self.id,
-        'bearer': self.bearer ,
+            'bearer': self.bearer,
         }
 
+
 class Weather:
-    def __init__(self,weather_data):
+    def __init__(self, weather_data):
         self.temperature = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["air_temperature"]
         self.wind_speed = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["wind_speed"]
