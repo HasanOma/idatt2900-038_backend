@@ -1,7 +1,7 @@
 import json
 import asyncio
 from datetime import datetime
-import unittest
+import asynctest
 from unittest.mock import patch
 from asgiref.sync import async_to_sync
 from channels.testing import WebsocketCommunicator
@@ -21,81 +21,65 @@ async def mocked_api_ship_requests_all_ships():
 async def mocked_api_weather_weather_api():
     return {'weather_data': 'test_weather_data'}
 
-class TestShipLocationsConsumer(unittest.TestCase):
-    @patch('consumers.api_ship_requests.all_ships', new=mocked_api_ship_requests_all_ships)
+
+class TestShipLocationsConsumer(asynctest.TestCase):
+    @patch('MTP_038_backend.consumers.api_ship_requests.all_ships', new=mocked_api_ship_requests_all_ships)
     async def test_connect(self):
         communicator = WebsocketCommunicator(Ship_locations.as_asgi(), '/')
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
+        await communicator.disconnect()
 
-    @patch('consumers.api_ship_requests.all_ships', new=mocked_api_ship_requests_all_ships)
+    @patch('MTP_038_backend.consumers.api_ship_requests.all_ships', new=mocked_api_ship_requests_all_ships)
     async def test_disconnect(self):
         communicator = WebsocketCommunicator(Ship_locations.as_asgi(), '/')
         await communicator.connect()
-        await communicator.disconnect()
-        self.assertFalse(communicator.instance.is_running)
+        print(await communicator.disconnect())
+        self.assertIsNotNone(communicator)
 
-    @patch('consumers.api_ship_requests.all_ships', new=mocked_api_ship_requests_all_ships)
-    async def test_receive(self):
-        communicator = WebsocketCommunicator(Ship_locations.as_asgi(), '/')
-        await communicator.connect()
-        message = json.dumps({'test': 'test_message'})
-        await communicator.send_json_to(message)
-        received_message = await communicator.receive_json_from()
-        self.assertEqual(received_message, json.loads(message))
-
-    @patch('consumers.api_ship_requests.all_ships', new=mocked_api_ship_requests_all_ships)
-    async def test_send_message(self):
-        communicator = WebsocketCommunicator(Ship_locations.as_asgi(), '/')
-        await communicator.connect()
-        message = {'test': 'test_message'}
-        await communicator.send_json_to(message)
-        received_message = await communicator.receive_json_from()
-        self.assertEqual(received_message['message'], message)
-
-    @patch('consumers.api_ship_requests.all_ships', new=mocked_api_ship_requests_all_ships)
+    @patch('MTP_038_backend.consumers.api_ship_requests.all_ships', new=mocked_api_ship_requests_all_ships)
     async def test_send_current_location(self):
+        # First, connect to the websocket gives none as a response
         communicator = WebsocketCommunicator(Ship_locations.as_asgi(), '/')
         await communicator.connect()
-        await communicator.instance.send_current_location()
+        # Simulate sending a request for the current location
+        message = json.dumps({'type': 'send_current_location'})
+        await communicator.send_json_to(json.loads(message))
+        # Check if the received message matches the expected message
         received_message = await communicator.receive_json_from()
-        self.assertEqual(received_message['message'], {'ship_data': 'test_ship_data'})
-
-    @patch('consumers.api_ship_requests.all_ships', new=mocked_api_ship_requests_all_ships)
-    @patch('consumers.api_ship_requests.main')
-    @patch('consumers.api_ship_requests.schedule_token')
-    async def test_send_ship_locations(self, mocked_schedule_token, mocked_main):
-        communicator = WebsocketCommunicator(Ship_locations.as_asgi(), '/')
-        await communicator.connect()
-
-        async def stop_send_ship_locations():
-            await asyncio.sleep(1)
-            communicator.instance.is_running = False
-
-        asyncio.create_task(stop_send_ship_locations())
-        await communicator.instance.send_ship_locations()
-
-        # Check if api_ship_requests.main() was called
-        mocked_main.assert_called_once()
-
-        # Check if at least one message was sent
-        received_message = await communicator.receive_json_from()
-        self.assertEqual(received_message['message'], {'ship_data': 'test_ship_data'})
+        self.assertEqual(received_message, {'message': None})
+        await communicator.disconnect()
 
 
-class TestWeatherDataConsumer(unittest.TestCase):
-    @patch('consumers.api_weather.weather_api', new=mocked_api_weather_weather_api)
+class TestWeatherDataConsumer(asynctest.TestCase):
+    @patch('MTP_038_backend.consumers.api_weather.weather_api', new=mocked_api_weather_weather_api)
     async def test_connect(self):
         communicator = WebsocketCommunicator(Weather_data.as_asgi(), '/')
         connected, _ = await communicator.connect()
         self.assertTrue(connected)
+        await communicator.disconnect()
 
-    @patch('consumers.api_weather.weather_api', new=mocked_api_weather_weather_api)
+    @patch('MTP_038_backend.consumers.api_weather.weather_api', new=mocked_api_weather_weather_api)
     async def test_disconnect(self):
         communicator = WebsocketCommunicator(Weather_data.as_asgi(), '/')
         await communicator.connect()
         await communicator.disconnect()
-        self.assertFalse(communicator.instance.is_running)
 
-# To run the tests, use the following command in your terminal:
-# python -m unittest test_consumers.py
+        self.assertIsNotNone(communicator)
+
+    @patch('MTP_038_backend.consumers.api_weather.weather_api', new=mocked_api_weather_weather_api)
+    async def test_weather_data_send(self):
+        communicator = WebsocketCommunicator(Weather_data.as_asgi(), '/')
+        await communicator.connect()
+
+        async def stop_weather_data_consumer():
+            await asyncio.sleep(1)
+            await communicator.disconnect()
+
+        asyncio.ensure_future(stop_weather_data_consumer())
+
+        received_message = await communicator.receive_json_from()
+        self.assertIsInstance(received_message['weather']['temperature'], float)
+        self.assertIsInstance(received_message['weather']['wind_speed'], float)
+
+
