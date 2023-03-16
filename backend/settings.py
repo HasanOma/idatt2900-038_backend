@@ -85,11 +85,11 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-# CORS_ORIGIN_ALLOW_ALL = True
-# CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
 # PORT = 8000
 # WEBSITES_PORT = 8000
-WSGI_APPLICATION = 'backend.wsgi.application'
+# WSGI_APPLICATION = 'backend.wsgi.application'
 ASGI_APPLICATION = 'backend.asgi.application'
 # ASGI_APPLICATION = "MTP_038_backend.routing.application"
 CHANNEL_LAYERS = {
@@ -116,17 +116,29 @@ CHANNEL_LAYERS = {
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
+    # "default": {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': 'postgres',
+    #     'USER': 'mtp038',
+    #     'PASSWORD': 'qwertY1!',
+    #     'HOST': 'mtp-db.postgres.database.azure.com',
+    #     'PORT': '5432',
+    #     'OPTIONS': {
+    #         'sslmode': 'require',
+    #         # 'async_mode': True,  # enable asyncio mode
+    #     }
+    # },
     "default": {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',
-        'USER': 'mtp038',
-        'PASSWORD': 'qwertY1!',
-        'HOST': 'mtp-db.postgres.database.azure.com',
+        'USER': 'postgres',
+        'PASSWORD': 'password',
+        'HOST': 'localhost',
         'PORT': '5432',
-        'OPTIONS': {
-            'sslmode': 'require',
-            # 'async_mode': True,  # enable asyncio mode
-        }
+        # 'OPTIONS': {
+        #     'sslmode': 'require',
+        #     # 'async_mode': True,  # enable asyncio mode
+        # }
     }
 }
 

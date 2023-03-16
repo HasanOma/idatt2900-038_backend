@@ -67,6 +67,7 @@ class Ship_locations(AsyncWebsocketConsumer):
                 await api_ship_requests.schedule_token()
                 start = datetime.now()
                 print(f"Elapsed time before resetting token: {elapsed_time}  minutes")
+            await asyncio.sleep(6)
             if not self.is_running:
                 print("Stopped sending ship locations")
                 break
