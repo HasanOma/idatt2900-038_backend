@@ -13,8 +13,3 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Group
         fields = ['url', 'name']
-
-# class CoordinateSerializer(serializers.Serializer):
-#     class Meta:
-#         model = models.Coordinate
-#         fields = ['north', 'west', 'south', 'east']

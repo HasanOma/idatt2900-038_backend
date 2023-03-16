@@ -1,14 +1,19 @@
-from sqlalchemy.ext.declarative import declarative_base
+import asyncio
+from sqlalchemy.orm import declarative_base
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 Base = declarative_base()
-from sqlalchemy import Column, Integer, String, Float
-from sqlalchemy import update
-from sqlalchemy.future import select
-from sqlalchemy.orm import relationship
-from django.db import models
-from sqlalchemy import update as sqlalchemy_update
-
-
+from sqlalchemy import Column, Integer, String, Float, Text
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from backend.database import cursor, conn
+from backend.database import sqlalchemy_conn_string
+
+engine = create_engine(sqlalchemy_conn_string)
+Session = sessionmaker(bind=engine)
+
 
 class Vessel:
     def __init__(self, data):
@@ -26,7 +31,8 @@ class Vessel:
 
 
 class tuple_to_ship:
-    def __init__(self, mmsi, name, msgtime, latitude, longitude, speedOverGround, shipType, destination, eta, shipLength, shipWidth):
+    def __init__(self, mmsi, name, msgtime, latitude, longitude, speedOverGround, shipType, destination, eta,
+                 shipLength, shipWidth):
         self.mmsi = mmsi
         self.name = name
         self.msgtime = msgtime
@@ -39,14 +45,25 @@ class tuple_to_ship:
         self.shipLength = shipLength
         self.shipWidth = shipWidth
 
+
 class ModelAdmin:
     @classmethod
     async def create(cls, kwargs):
         if not isinstance(kwargs, dict):
             raise ValueError("Invalid argument: expected a dictionary")
-        query = f"INSERT INTO {cls.__tablename__} ({', '.join(kwargs.keys())}) VALUES ({', '.join(['%s'] * len(kwargs.values()))})" \
-                f"ON CONFLICT (mmsi) DO UPDATE SET " \
-                f"{', '.join([f'{key}=EXCLUDED.{key}' for key in kwargs.keys() if key != 'mmsi'])} RETURNING *"
+
+        def quote_camelcase_columns(column_name):
+            return f'"{column_name}"' if any(x.isupper() for x in column_name) else column_name
+
+        quoted_keys = [quote_camelcase_columns(key) for key in kwargs.keys()]
+        quoted_excluded_keys = [quote_camelcase_columns(key) for key in kwargs.keys() if key != 'mmsi']
+
+        query = f"""
+            INSERT INTO {cls.__tablename__} ({', '.join(quoted_keys)})
+            VALUES ({', '.join(['%s'] * len(kwargs.values()))})
+            ON CONFLICT (mmsi) DO UPDATE SET {', '.join([f'{key}=EXCLUDED.{key}' for key in quoted_excluded_keys])}
+            RETURNING *
+            """
         cursor.execute(query, tuple(kwargs.values()))
         result = cursor.fetchone()
         conn.commit()
@@ -70,13 +87,17 @@ class ModelAdmin:
 
     @classmethod
     async def update_ship_fields(cls, mmsi, fields):
-        # print("updating ship ", mmsi, " with ", fields)
+        def quote_camelcase_columns(column_name):
+            return f'"{column_name}"' if any(x.isupper() for x in column_name) else column_name
+
+        quoted_keys = [quote_camelcase_columns(key) for key in fields.keys()]
+
         query = f"""
-        UPDATE {cls.__tablename__}
-        SET {', '.join(f'{k} = %s' for k in fields.keys())}
-        WHERE mmsi = %s
-        RETURNING *
-      """
+            UPDATE {cls.__tablename__}
+            SET {', '.join(f'{k} = %s' for k in quoted_keys)}
+            WHERE mmsi = %s
+            RETURNING *
+            """
         values = tuple(fields.values()) + (mmsi,)
         values = tuple([v if v is not None else '' for v in values])
         cursor.execute(query, values)
@@ -116,6 +137,7 @@ class ModelAdmin:
             return None
         return result
 
+
 class ship_basic(Base, ModelAdmin):
     __tablename__ = 'ship_timestamp'
 
@@ -134,6 +156,7 @@ class ship_basic(Base, ModelAdmin):
             'timestamp': self.timestamp,
         }
 
+
 class Ship(Base, ModelAdmin):
     __tablename__ = 'ships'
 
@@ -142,12 +165,12 @@ class Ship(Base, ModelAdmin):
     msgtime = Column(String(255), nullable=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
-    speedOverGround = Column(Float, nullable=True)
-    shipType = Column(Integer, nullable=True)
+    speedOverGround = Column(String(255), nullable=True,  name='speedOverGround')
+    shipType = Column(Integer, nullable=True, name='shipType')
     destination = Column(String(255), nullable=True)
     eta = Column(String(255), nullable=True)
-    shipLength = Column(Float, nullable=True)
-    shipWidth = Column(Float, nullable=True)
+    shipLength = Column(Float, nullable=True, name='shipLength')
+    shipWidth = Column(Float, nullable=True, name='shipWidth')
 
     __mapper_args__ = {"eager_defaults": True}
 
@@ -158,32 +181,42 @@ class Ship(Base, ModelAdmin):
 
     def to_dict(self):
         return {
-        'latitude': self.latitude ,
-        'longitude': self.longitude ,
-        'mmsi': self.mmsi ,
-        'name': self.name ,
-        'msgtime': self.msgtime ,
-        'speedOverGround': self.speedOverGround ,
-        'destination': self.destination ,
-        'eta': self.eta ,
-        'shipType': self.shipType ,
-        'shipLength': self.shipLength ,
-        'shipWidth': self.shipWidth
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'mmsi': self.mmsi,
+            'name': self.name,
+            'msgtime': self.msgtime,
+            'speedOverGround': self.speedOverGround,
+            'destination': self.destination,
+            'eta': self.eta,
+            'shipType': self.shipType,
+            'shipLength': self.shipLength,
+            'shipWidth': self.shipWidth
         }
 
+
 class Token(Base, ModelAdmin):
-    __tablename__ = 'api_token'
+    __tablename__ = 'token'
     id = Column(Integer, primary_key=True)
-    bearer = Column(String(255), nullable=True)
+    bearer = Column(String(2000), nullable=True)
     __mapper_args__ = {"eager_defaults": True}
 
     def to_dict(self):
         return {
             'id': self.id,
-        'bearer': self.bearer ,
+            'bearer': self.bearer,
         }
 
+
 class Weather:
-    def __init__(self,weather_data):
+    def __init__(self, weather_data):
         self.temperature = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["air_temperature"]
         self.wind_speed = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["wind_speed"]
+
+
+async def migrate():
+    Base.metadata.drop_all(engine)  # Drop all existing tables
+    Base.metadata.create_all(engine)  # Recreate the tables with the new schema
+
+if __name__ == "__main__":
+    asyncio.run(migrate())

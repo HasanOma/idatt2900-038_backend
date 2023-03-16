@@ -1,20 +1,19 @@
-import os
-
 import asyncio
+import json
+import os
+import sys
+from datetime import datetime, timedelta
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import aiohttp
 import requests
-import asgiref
-import json
-from typing import Dict
-from datetime import datetime, timedelta
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+
 # from backend.database import async_db_session
 from MTP_038_backend.models import Ship
-from MTP_038_backend.models import Vessel
 from MTP_038_backend.models import Token
-import ast
-import os
+from MTP_038_backend.models import Vessel
+
+
 
 #TODO 1: Bearer in db
 

@@ -27,3 +27,7 @@ class TestWeatherAPI(unittest.TestCase):
         expected_keys = {'temperature', 'wind_speed'}
         for key in expected_keys:
             self.assertIn(key, result)
+
+
+if __name__ == '__main__':
+    unittest.main()
