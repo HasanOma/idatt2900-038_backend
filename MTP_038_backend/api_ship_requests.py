@@ -15,6 +15,11 @@ coordinates = {
 
 
 def set_coordinates():
+    """
+    Set the global coordinates variable to the specified values.
+
+    This function sets the global `coordinates` dictionary to the specified north, south, east, and west values.
+    """
     global coordinates
     north = 64.299370
     west = 7.706847
@@ -27,6 +32,16 @@ def set_coordinates():
 
 
 def check_specific_coordinates(latitude, longitude):
+    """
+    Check if the given latitude and longitude are within the specified coordinates.
+
+    Args:
+        latitude (float): The latitude of the point to check.
+        longitude (float): The longitude of the point to check.
+
+    Returns:
+        bool: True if the point is within the specified coordinates, False otherwise.
+    """
     global coordinates
     north = coordinates['north']
     south = coordinates['south']
@@ -39,6 +54,15 @@ def check_specific_coordinates(latitude, longitude):
 
 
 async def schedule_token():
+    """
+    Retrieve an access token from the database or request a new one.
+
+    This function checks the database for a stored access token. If one is found, it is returned.
+    If not, a new token is requested from the BarentsWatch API and returned.
+
+    Returns:
+        str: The access token.
+    """
     global bearer
     url = "https://id.barentswatch.no/connect/token"
     method_post = "POST"
@@ -61,11 +85,24 @@ async def schedule_token():
 
 
 async def main():
+    """
+    Set coordinates and schedule token retrieval.
+
+    This function sets the coordinates for the area of interest and schedules
+    the token retrieval process.
+    """
     set_coordinates()
     await schedule_token()
 
 
 async def all_ships():
+    """
+    Fetch all ship data from the BarentsWatch API.
+
+    This function sends a GET request to the BarentsWatch API using the access
+    token obtained from the main function to fetch data for all ships. The
+    fetched data is then filtered based on specific coordinates and returned.
+    """
     global bearer
     url = "https://live.ais.barentswatch.no/v1/latest/combined"
     method = "GET"
@@ -79,6 +116,26 @@ async def all_ships():
 
 
 async def schedule_all_ships(method, headers, payload, url, session, results):
+    """
+    Fetch ship data from an API and filter the results based on specific coordinates.
+
+    This function sends a request to the specified API using the provided method,
+    headers, payload, and URL. It processes the API response, filtering ships based
+    on their latitude and longitude. If a ship is within the specified coordinates,
+    it calls the `create_or_update_ship_with_basic` function to create or update the
+    ship in the database. The filtered ships are then added to the `results` list.
+
+    Args:
+        method (str): The HTTP method for the API request (e.g., "GET" or "POST").
+        headers (dict): The headers to include in the API request.
+        payload (dict): The payload to include in the API request, if applicable.
+        url (str): The URL of the API endpoint.
+        session (aiohttp.ClientSession): The aiohttp client session for making requests.
+        results (list): A list to store the filtered ship data.
+
+    Returns:
+        list: The updated results list containing the filtered ships.
+    """
     Skip = namedtuple('Skip',
                       ['mmsi', 'name', 'msgtime', 'latitude', 'longitude', 'speedOverGround', 'shipType', 'destination',
                        'eta', 'shipLength', 'shipWidth'])
@@ -100,6 +157,21 @@ async def schedule_all_ships(method, headers, payload, url, session, results):
 
 
 async def create_or_update_ship_with_basic(ship):
+    """
+    Create or update a ship in the database based on basic ship data.
+
+    This function takes a ship dictionary containing basic ship data and either
+    creates a new ship in the database or updates an existing ship's fields.
+    If a ship with the same MMSI already exists in the database and its latitude
+    and longitude match the new ship data, no changes are made. Otherwise, the
+    ship's fields are updated in the database.
+
+    Args:
+        ship (dict): A dictionary containing basic ship data.
+
+    Returns:
+        dict: The created or updated ship's data as a dictionary.
+    """
     # print("ship ", ship)
     fields_to_update = {
         "msgtime": ship['msgtime'],

@@ -5,6 +5,13 @@ import sys
 
 
 class Mtp038BackendConfig(AppConfig):
+    """
+    Configuration for the MTP_038_backend Django app.
+
+    This configuration class defines the app's name and default auto field.
+    It also sets up a ready event and a stop event, and starts the
+    MyThread thread when the app is ready.
+    """
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'MTP_038_backend'
 
@@ -15,6 +22,11 @@ class Mtp038BackendConfig(AppConfig):
     stop_event = threading.Event()
 
     def ready(self):
+        """
+        Perform app-specific actions when the app is ready.
+
+        This method sets the ready event and starts the MyThread thread.
+        """
         # Set the ready event
         self.__class__.ready_event.set()
 
@@ -25,12 +37,23 @@ class Mtp038BackendConfig(AppConfig):
 
 
 class MyThread(threading.Thread):
+    """
+    Custom thread class for running the api_stream.py script.
+
+    This class extends the threading.Thread class and overrides the run
+    method to execute the api_stream.py script in a separate thread.
+    """
     def __init__(self, stop_event):
         super().__init__()
         self.stop_event = stop_event
 
     def run(self):
+        """
+        Execute the api_stream.py script in a separate thread.
 
+        This method runs the api_stream.py script using subprocess.run and
+        handles any CalledProcessError exceptions that may occur.
+        """
         try:
             print("Starting script...")
             # Start the api_stream.py script

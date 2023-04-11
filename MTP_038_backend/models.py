@@ -16,6 +16,9 @@ Session = sessionmaker(bind=engine)
 
 
 class Vessel:
+    """
+    A class representing a vessel with various attributes extracted from a data dictionary.
+    """
     def __init__(self, data):
         self.latitude = data['geometry']['coordinates'][0]
         self.longitude = data['geometry']['coordinates'][1]
@@ -31,6 +34,9 @@ class Vessel:
 
 
 class ModelAdmin:
+    """
+    A mixin class containing common CRUD methods for database models.
+    """
     @classmethod
     async def create(cls, kwargs):
         if not isinstance(kwargs, dict):
@@ -123,6 +129,9 @@ class ModelAdmin:
 
 
 class ship_basic(Base, ModelAdmin):
+    """
+    A database model representing basic ship information with a timestamp.
+    """
     __tablename__ = 'ship_timestamp'
 
     mmsi = Column(Integer, primary_key=True)
@@ -142,6 +151,9 @@ class ship_basic(Base, ModelAdmin):
 
 
 class Ship(Base, ModelAdmin):
+    """
+    A database model representing detailed ship information.
+    """
     __tablename__ = 'ships'
 
     mmsi = Column(Integer, primary_key=True)
@@ -180,6 +192,9 @@ class Ship(Base, ModelAdmin):
 
 
 class Token(Base, ModelAdmin):
+    """
+    A database model representing an API token.
+    """
     __tablename__ = 'token'
     id = Column(Integer, primary_key=True)
     bearer = Column(String(2000), nullable=True)
@@ -193,12 +208,18 @@ class Token(Base, ModelAdmin):
 
 
 class Weather:
+    """
+    A class representing weather data extracted from a weather data dictionary.
+    """
     def __init__(self, weather_data):
         self.temperature = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["air_temperature"]
         self.wind_speed = weather_data["properties"]["timeseries"][0]["data"]["instant"]["details"]["wind_speed"]
 
 
 async def migrate():
+    """
+    An asynchronous function that drops all existing tables and recreates them with the updated schema.
+    """
     Base.metadata.drop_all(engine)  # Drop all existing tables
     Base.metadata.create_all(engine)  # Recreate the tables with the new schema
 

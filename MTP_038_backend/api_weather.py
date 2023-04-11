@@ -8,7 +8,14 @@ from MTP_038_backend import models
 
 
 async def weather_api():
+    """
+    Fetch weather data from the MET Norway Weather API.
 
+    This function sends a GET request to the MET Norway Weather API with
+    specified latitude, longitude, and altitude values. A random User-Agent
+    header is selected from a predefined list. The fetched weather data is
+    then parsed, converted into a Weather model, and returned as a dictionary.
+    """
 
     url = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
 
