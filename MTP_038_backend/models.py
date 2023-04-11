@@ -165,7 +165,7 @@ class Ship(Base, ModelAdmin):
     msgtime = Column(String(255), nullable=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
-    speedOverGround = Column(String(255), nullable=True,  name='speedOverGround')
+    speedOverGround = Column(Float(255), nullable=True,  name='speedOverGround')
     shipType = Column(Integer, nullable=True, name='shipType')
     destination = Column(String(255), nullable=True)
     eta = Column(String(255), nullable=True)

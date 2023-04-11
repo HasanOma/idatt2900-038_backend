@@ -4,6 +4,8 @@ import os
 import sys
 from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from collections import namedtuple
+from datetime import datetime
 
 import aiohttp
 import requests
@@ -83,6 +85,10 @@ async def filter_ships():
     global bearer
     # global filter_coordinates
 
+    Skip = namedtuple('Skip',
+                      ['mmsi', 'name', 'msgtime', 'latitude', 'longitude', 'speedOverGround', 'shipType', 'destination',
+                       'eta', 'shipLength', 'shipWidth'])
+
     url = "https://live.ais.barentswatch.no/v1/combined"
 
     payload = {
@@ -118,9 +124,25 @@ async def filter_ships():
                             data = Vessel(data_dict)
                             ship = Ship(**data.__dict__)
                             from_db = await Ship.get(ship.mmsi)
+                            date_format = "%m%d%H%M"
+                            try:
+                                date_obj = datetime.strptime(ship.eta, date_format)
+                                now = datetime.now()
+                                date_obj = date_obj.replace(year=now.year)
+                                date_str = date_obj.strftime("%Y-%m-%d %H:%M:%S")
+                                ship.eta = date_str
+                            except:
+                                date_str = None
+                                ship.eta = date_str
                             if from_db is None:
                                 # print("appending ship", ship.to_dict())
                                 ships.append(ship)
+                            else:
+                                from_db = dict(zip(Skip._fields, from_db))
+                                if from_db["destination"] != ship.destination:
+                                    ships.append(ship)
+                                elif from_db["eta"] != ship.eta:
+                                    ships.append(ship)
                             if i % 200 == 0:
                                 entities = [ship.to_dict() for ship in ships]
                                 await Ship.create_multi(entities)
