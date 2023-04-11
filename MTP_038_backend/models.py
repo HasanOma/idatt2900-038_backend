@@ -30,22 +30,6 @@ class Vessel:
         self.shipWidth = data['properties']['shipWidth']
 
 
-class tuple_to_ship:
-    def __init__(self, mmsi, name, msgtime, latitude, longitude, speedOverGround, shipType, destination, eta,
-                 shipLength, shipWidth):
-        self.mmsi = mmsi
-        self.name = name
-        self.msgtime = msgtime
-        self.latitude = latitude
-        self.longitude = longitude
-        self.speedOverGround = speedOverGround
-        self.shipType = shipType
-        self.destination = destination
-        self.eta = eta
-        self.shipLength = shipLength
-        self.shipWidth = shipWidth
-
-
 class ModelAdmin:
     @classmethod
     async def create(cls, kwargs):
@@ -165,7 +149,7 @@ class Ship(Base, ModelAdmin):
     msgtime = Column(String(255), nullable=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
-    speedOverGround = Column(Float(255), nullable=True,  name='speedOverGround')
+    speedOverGround = Column(Float, nullable=True,  name='speedOverGround')
     shipType = Column(Integer, nullable=True, name='shipType')
     destination = Column(String(255), nullable=True)
     eta = Column(String(255), nullable=True)
