@@ -57,6 +57,12 @@ No additional configuration is needed for Redis, as it should run on `localhost`
     ```bash
     python manage.py runserver
     ```
+   
+### Run tests
+   ```bash
+   python manage.py test --verbosity=2
+   ```
+
 ## Accessing the Websockets
 
 You can access the following Websocket URLs for different data:
