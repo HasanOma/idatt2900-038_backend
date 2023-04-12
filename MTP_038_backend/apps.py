@@ -27,13 +27,17 @@ class Mtp038BackendConfig(AppConfig):
 
         This method sets the ready event and starts the MyThread thread.
         """
-        # Set the ready event
-        self.__class__.ready_event.set()
+        # Check if the current process is running Django test command
+        running_tests = 'test' in sys.argv
 
-        # Start the script in a new thread
-        print("Starting script...")
-        thread = MyThread(self.__class__.stop_event)
-        thread.start()
+        if not running_tests:
+            # Set the ready event
+            self.__class__.ready_event.set()
+
+            # Start the script in a new thread
+            print("Starting script...")
+            thread = MyThread(self.__class__.stop_event)
+            thread.start()
 
 
 class MyThread(threading.Thread):

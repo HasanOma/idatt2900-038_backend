@@ -53,7 +53,7 @@ class TestApiShipRequests(asynctest.TestCase):
     async def setUp(self):
         self.ship_data = {
             'mmsi': 123456789,
-            'name': 'Test Ship',
+            'name': 'Updated Test Ship',
             'msgtime': '2023-03-15T12:00:00Z',
             'latitude': 64.299370,
             'longitude': 7.706847,

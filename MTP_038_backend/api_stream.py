@@ -15,10 +15,6 @@ from MTP_038_backend.models import Ship
 from MTP_038_backend.models import Token
 from MTP_038_backend.models import Vessel
 
-
-
-#TODO 1: Bearer in db
-
 bearer = None
 
 def set_coordinates():
