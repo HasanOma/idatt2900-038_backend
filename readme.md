@@ -52,8 +52,12 @@ No additional configuration is needed for Redis, as it should run on `localhost`
     python models.py
     ```
 
-3. Start the Django server.
+3. Go back to the root directory and start the Django server.
     
+   ```bash
+    cd ..
+    ```
+
     ```bash
     python manage.py runserver
     ```
@@ -67,7 +71,7 @@ No additional configuration is needed for Redis, as it should run on `localhost`
 
 You can access the following Websocket URLs for different data:
 
-- Ship locations: `ws://127.0.0.1:8000/ws/ship_locations/`
+- Ships: `ws://127.0.0.1:8000/ws/ship_locations/`
 - Weather data: `ws://127.0.0.1:8000/ws/weather/`
 
 Multiple clients can join the same instance.
