@@ -1,11 +1,11 @@
 version: 2
 
 sphinx:
-  configuration: docs/source/conf.py
+  configuration: MTP_038_backend/docs/source/conf.py
 
 formats: all
 
 python:
   version: 3.7
   install:
-    - requirements: docs/requirements.txt
+    - requirements: MTP_038_backend/docs/requirements.txt
